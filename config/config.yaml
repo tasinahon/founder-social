@@ -1,0 +1,188 @@
+ai:
+  azure_openai:
+    api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
+    api_version: 2024-12-01-preview
+    azure_endpoint: https://ai-founder-3699.openai.azure.com/
+    model: gpt-4-turbo-preview
+    temperature: 0.7
+  deepseek_r1:
+    api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
+    api_version: 2024-12-01-preview
+    azure_endpoint: https://ai-founder-3699.openai.azure.com/
+    temperature: 0.7
+  gpt4o:
+    api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
+    endpoint: https://ai-founder-3699.openai.azure.com/openai/deployments/gpt-4o
+    temperature: 0.7
+  openai:
+    api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
+    model: gpt-4-turbo-preview
+    temperature: 0.7
+  provider: gpt4o
+analytics:
+  google_analytics:
+    credentials_file: path/to/credentials.json
+    enabled: false
+    tracking_id: GA-XXXXXXXXX-X
+  google_search_console:
+    credentials_file: path/to/credentials.json
+    enabled: false
+    site_url: https://yourstartup.com
+api_keys:
+  azure_openai:
+    api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
+    azure_endpoint: https://ai-founder-3699.openai.azure.com/
+  deepseek_r1:
+    api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
+    azure_endpoint: https://ai-founder-3699.openai.azure.com/
+  facebook:
+    client_id: 1937644817012952
+    client_secret: 6753b4e4cb87066014d9ec1cd7bb34f3
+  gpt4o:
+    api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
+    endpoint: https://ai-founder-3699.openai.azure.com/openai/deployments/gpt-4o
+  instagram:
+    client_id: your-instagram-client-id
+    client_secret: your-instagram-client-secret
+  linkedin:
+    client_id: 78ye1cdk35bvui
+    client_secret: WPL_AP1.La452ZR7LbixU1Th.91JzRQ==
+  openai:
+    api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
+  twitter:
+    client_id: T05ETUk4WlBaZ2ZaekhkaDg0TUo6MTpjaQ
+    client_secret: Zo4nqnAAc_Cv9DGZf1DklDQzkGoR1uQPiR2y0b50CevzKzQWFV
+blog_platforms:
+  ghost:
+    api_key: your-ghost-api-key
+    auto_post: false
+    enabled: false
+    url: https://your-ghost-blog.com
+  medium:
+    access_token: your-medium-access-token
+    auto_post: false
+    enabled: false
+  wordpress:
+    auto_post: true
+    enabled: true
+    password: your-wordpress-password
+    url: https://yourstartup.com
+    username: your-wordpress-username
+content_strategy:
+  blog_frequency: 2
+  content_themes:
+  - innovation
+  - growth
+  - community
+  - transparency
+  preferred_content_types:
+  - industry insights
+  - startup lessons
+  - product updates
+  - team culture
+  social_frequency: 5
+logging:
+  backup_count: 5
+  file: ./logs/founder_socials.log
+  level: INFO
+  max_size: 10MB
+mcp:
+  database:
+    connection_string: sqlite:///./data/content.db
+    enabled: true
+    type: sqlite
+  file_system:
+    enabled: true
+    root_path: ./data
+  git:
+    auto_commit: true
+    branch: main
+    enabled: true
+    repository_url: https://github.com/yourusername/founder-socials-content
+  web_search:
+    enabled: true
+    max_results: 5
+    search_engine: google
+publishing:
+  auto_schedule: true
+  buffer_time: 30
+  optimal_times:
+    blog:
+    - '10:00'
+    - '14:00'
+    facebook:
+    - 09:00
+    - '15:00'
+    - '19:00'
+    instagram:
+    - '12:00'
+    - '18:00'
+    - '20:00'
+    linkedin:
+    - 08:00
+    - '12:00'
+    - '17:00'
+    twitter:
+    - 09:00
+    - '12:00'
+    - '17:00'
+  timezone: UTC
+social_media:
+  facebook:
+    access_token: EAAbiRxcE2NgBPJlxEhD5Ncqt4wvJkyZCXJcXGtKGjIVZBCgKyIZBOWnJaws1FFuZBhmgGfUXO2ABlQZBvK2QzXg7FkIHM6BVqWJb2L9KpDKZAhxOEQlEYUySY1wrp7JZBhlorsG5QxqxHY07ELeO8PAYE6RlPkXgwX1GhvRVH4BwZAF0JklqutKydX3ZAw9OISDYL5tezQo3X
+    app_id: 1937644817012952
+    app_secret: 6753b4e4cb87066014d9ec1cd7bb34f3
+    auto_post: true
+    enabled: true
+    page_id: '564794600044137'
+    token_expires: '2025-10-06'
+  instagram:
+    auto_post: false
+    enabled: false
+    password: your-instagram-password
+    username: your-instagram-username
+  linkedin:
+    access_token: AQVNhk5hwyo-loIMdBo2aHt6s_w73m-LbO9pg-u1f5460zOCEdNqExdmfU_3USBNmIT8blmELErQRQqMghgs967u6vbQ--0sZENahSXpQStsUDvDVFa7X0L-Mo2i9ifDXBXOx4lFORxR-2bcF_iWEuoCD8ihLF88FQ3G8FzSzk2waaK0p0pngtyYp0gD3kwhWr9bwe_duWcpp6_GUni1UvaBWrgIGeaFPglmqMOBXHjxvqVrm0zBG8sssbc9svT8QvNug5A3SfQ6hl5yTGk7YHVA_paNveBkqaNvp7Eq9TEWC05F4ioKWGToAeeLmMwDMWDQbItmZVwjzYOewk6q9qfiGFASaw
+    auto_post: true
+    client_id: 78ye1cdk35bvui
+    client_secret: WPL_AP1.La452ZR7LbixU1Th.91JzRQ==
+    company_id: '108288876'
+    company_name: Your Company
+    enabled: true
+    posting_mode: company
+  twitter:
+    access_token: 1911985732769710080-yzoMT2e9n66ELzhDt5kcIiO17jO7AK
+    access_token_secret: Ss5zANskebyh7TwKCh2EgKd4hAlcm2y4YjSKR01DoStPT
+    api_key: zSR62skZ3qEQa7M6V4qbazQu4
+    api_secret: 70zv3ykcziqL6l91gZEIodRl7f6uRJ2ipE2GKWAxpFlESKKj5A
+    auto_post: true
+    bearer_token: AAAAAAAAAAAAAAAAAAAAANzY3QEAAAAAaqdyQoha4I%2BfdGd5LtD2vV7YNqo%3DHO1m5gfXf2PXMPeKANXkusRl4qIgedMRes9Lh77Aw58fYVuE18
+    character_limit: 280
+    client_id: T05ETUk4WlBaZ2ZaekhkaDg0TUo6MTpjaQ
+    client_secret: Zo4nqnAAc_Cv9DGZf1DklDQzkGoR1uQPiR2y0b50CevzKzQWFV
+    enabled: true
+startup:
+  blog_url: https://yourstartup.com/blog
+  brand_voice: Professional yet approachable, innovative, helpful, authentic
+  description: Brief description of your startup and what you do
+  industry: Technology
+  name: Your Startup Name
+  target_audience: Startup founders, tech professionals, entrepreneurs
+  website: https://yourstartup.com
+templates:
+  blog_post:
+    max_words: 2000
+    min_words: 800
+    structure:
+    - introduction
+    - main_content
+    - conclusion
+    - call_to_action
+  social_post:
+    include_cta: true
+    include_hashtags: true
+    max_length:
+      facebook: 63206
+      instagram: 2200
+      linkedin: 1300
+      twitter: 280
