@@ -1,0 +1,56 @@
+# Core AI and ML
+openai>=1.0.0
+azure-ai-inference>=1.0.0b9
+azure-core>=1.29.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn>=0.24.0
+jinja2>=3.1.0
+
+# Database
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+
+# Social Media APIs
+tweepy>=4.14.0
+linkedin-api>=2.0.0
+facebook-sdk>=3.1.0
+instagram-private-api>=1.6.0
+
+# Blog Platforms (Fixed package names)
+python-wordpress-xmlrpc>=2.3
+medium-api>=0.1.0
+
+# SEO and Analytics
+google-api-python-client>=2.100.0
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+
+# Content Processing
+beautifulsoup4>=4.12.0
+markdown>=3.5.0
+python-frontmatter>=1.0.0
+pillow>=10.0.0
+
+# Utilities
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+schedule>=1.2.0
+requests>=2.31.0
+aiohttp>=3.9.0
+cryptography>=41.0.0
+
+# Additional Required Packages
+httpx>=0.25.0
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Development
+pytest>=7.4.0
+black>=23.0.0
+flake8>=6.0.0

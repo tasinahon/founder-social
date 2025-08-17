@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ startup_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+        <p class="mt-2 text-gray-600">Configure your startup details and social media connections</p>
+    </div>
+
+    <!-- Social Media Connections -->
+    <div class="bg-white shadow rounded-lg mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Social Media Connections</h2>
+            <p class="mt-1 text-sm text-gray-600">Connect your social media accounts to enable automatic posting</p>
+        </div>
+        
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Twitter/X -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                            <span class="ml-2 font-medium text-gray-900">Twitter/X</span>
+                        </div>
+                        <div id="twitter-status" class="flex items-center">
+                            {% if connection_status.twitter.connected %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Connected
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    Not Connected
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if connection_status.twitter.connected %}
+                        <div class="text-sm text-gray-600 mb-3">
+                            <p>Expires: {{ connection_status.twitter.expires_at[:10] }}</p>
+                            <p>Scope: {{ connection_status.twitter.scope }}</p>
+                        </div>
+                        <button onclick="disconnectPlatform('twitter')" class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                            Disconnect
+                        </button>
+                    {% else %}
+                        {% if 'twitter' in configured_platforms %}
+                            <button onclick="connectPlatform('twitter')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                                Connect Twitter
+                            </button>
+                        {% else %}
+                            <div class="text-sm text-gray-500 mb-3">
+                                <p>Add Twitter API credentials in config to enable connection</p>
+                            </div>
+                            <button disabled class="w-full bg-gray-300 text-gray-500 text-sm font-medium py-2 px-4 rounded-md cursor-not-allowed">
+                                Not Configured
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- LinkedIn -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                            <span class="ml-2 font-medium text-gray-900">LinkedIn</span>
+                        </div>
+                        <div id="linkedin-status" class="flex items-center">
+                            {% if connection_status.linkedin.connected %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Connected
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    Not Connected
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if connection_status.linkedin.connected %}
+                        <div class="text-sm text-gray-600 mb-3">
+                            <p>Expires: {{ connection_status.linkedin.expires_at[:10] }}</p>
+                            <p>Scope: {{ connection_status.linkedin.scope }}</p>
+                        </div>
+                        <button onclick="disconnectPlatform('linkedin')" class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                            Disconnect
+                        </button>
+                    {% else %}
+                        {% if 'linkedin' in configured_platforms %}
+                            <button onclick="connectPlatform('linkedin')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                                Connect LinkedIn
+                            </button>
+                        {% else %}
+                            <div class="text-sm text-gray-500 mb-3">
+                                <p>Add LinkedIn API credentials in config to enable connection</p>
+                            </div>
+                            <button disabled class="w-full bg-gray-300 text-gray-500 text-sm font-medium py-2 px-4 rounded-md cursor-not-allowed">
+                                Not Configured
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- Facebook -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                            <span class="ml-2 font-medium text-gray-900">Facebook</span>
+                        </div>
+                        <div id="facebook-status" class="flex items-center">
+                            {% if connection_status.facebook.connected %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Connected
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    Not Connected
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if connection_status.facebook.connected %}
+                        <div class="text-sm text-gray-600 mb-3">
+                            <p>Expires: {{ connection_status.facebook.expires_at[:10] }}</p>
+                            <p>Scope: {{ connection_status.facebook.scope }}</p>
+                        </div>
+                        <button onclick="disconnectPlatform('facebook')" class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                            Disconnect
+                        </button>
+                    {% else %}
+                        {% if 'facebook' in configured_platforms %}
+                            <button onclick="connectPlatform('facebook')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                                Connect Facebook
+                            </button>
+                        {% else %}
+                            <div class="text-sm text-gray-500 mb-3">
+                                <p>Add Facebook API credentials in config to enable connection</p>
+                            </div>
+                            <button disabled class="w-full bg-gray-300 text-gray-500 text-sm font-medium py-2 px-4 rounded-md cursor-not-allowed">
+                                Not Configured
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- Instagram -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.297-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.807.875 1.297 2.026 1.297 3.323s-.49 2.448-1.297 3.323c-.875.807-2.026 1.297-3.323 1.297zm7.718-1.297c-.875.807-2.026 1.297-3.323 1.297s-2.448-.49-3.323-1.297c-.807-.875-1.297-2.026-1.297-3.323s.49-2.448 1.297-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.807.875 1.297 2.026 1.297 3.323s-.49 2.448-1.297 3.323z"/>
+                            </svg>
+                            <span class="ml-2 font-medium text-gray-900">Instagram</span>
+                        </div>
+                        <div id="instagram-status" class="flex items-center">
+                            {% if connection_status.instagram.connected %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Connected
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    Not Connected
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if connection_status.instagram.connected %}
+                        <div class="text-sm text-gray-600 mb-3">
+                            <p>Expires: {{ connection_status.instagram.expires_at[:10] }}</p>
+                            <p>Scope: {{ connection_status.instagram.scope }}</p>
+                        </div>
+                        <button onclick="disconnectPlatform('instagram')" class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                            Disconnect
+                        </button>
+                    {% else %}
+                        {% if 'instagram' in configured_platforms %}
+                            <button onclick="connectPlatform('instagram')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                                Connect Instagram
+                            </button>
+                        {% else %}
+                            <div class="text-sm text-gray-500 mb-3">
+                                <p>Add Instagram API credentials in config to enable connection</p>
+                            </div>
+                            <button disabled class="w-full bg-gray-300 text-gray-500 text-sm font-medium py-2 px-4 rounded-md cursor-not-allowed">
+                                Not Configured
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Startup Configuration -->
+    <div class="bg-white shadow rounded-lg mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Startup Configuration</h2>
+            <p class="mt-1 text-sm text-gray-600">Update your startup details and preferences</p>
+        </div>
+        
+        <div class="p-6">
+            <form id="startup-config-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="startup-name" class="block text-sm font-medium text-gray-700">Startup Name</label>
+                        <input type="text" id="startup-name" name="startup_name" value="{{ config.startup.name }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    
+                    <div>
+                        <label for="startup-industry" class="block text-sm font-medium text-gray-700">Industry</label>
+                        <input type="text" id="startup-industry" name="startup_industry" value="{{ config.startup.industry }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    
+                    <div>
+                        <label for="startup-description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="startup-description" name="startup_description" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">{{ config.startup.description }}</textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="startup-website" class="block text-sm font-medium text-gray-700">Website</label>
+                        <input type="url" id="startup-website" name="startup_website" value="{{ config.startup.website }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- API Configuration -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">API Configuration</h2>
+            <p class="mt-1 text-sm text-gray-600">Configure API keys for AI providers and platforms</p>
+        </div>
+        
+        <div class="p-6">
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">AI Providers</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="openai-key" class="block text-sm font-medium text-gray-700">OpenAI API Key</label>
+                            <input type="password" id="openai-key" name="openai_key" value="{{ config.api_keys.openai.api_key }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="anthropic-key" class="block text-sm font-medium text-gray-700">Anthropic API Key</label>
+                            <input type="password" id="anthropic-key" name="anthropic_key" value="{{ config.api_keys.anthropic.api_key }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media Platforms</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="twitter-client-id" class="block text-sm font-medium text-gray-700">Twitter Client ID</label>
+                            <input type="text" id="twitter-client-id" name="twitter_client_id" value="{{ config.api_keys.twitter.client_id }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="twitter-client-secret" class="block text-sm font-medium text-gray-700">Twitter Client Secret</label>
+                            <input type="password" id="twitter-client-secret" name="twitter_client_secret" value="{{ config.api_keys.twitter.client_secret }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="linkedin-client-id" class="block text-sm font-medium text-gray-700">LinkedIn Client ID</label>
+                            <input type="text" id="linkedin-client-id" name="linkedin_client_id" value="{{ config.api_keys.linkedin.client_id }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="linkedin-client-secret" class="block text-sm font-medium text-gray-700">LinkedIn Client Secret</label>
+                            <input type="password" id="linkedin-client-secret" name="linkedin_client_secret" value="{{ config.api_keys.linkedin.client_secret }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="button" onclick="saveApiConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                        Save API Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function connectPlatform(platform) {
+    showLoading(`Connecting to ${platform}...`);
+    window.location.href = `/auth/${platform}/connect`;
+}
+
+async function disconnectPlatform(platform) {
+    if (!confirm(`Are you sure you want to disconnect ${platform}?`)) {
+        return;
+    }
+    
+    showLoading(`Disconnecting from ${platform}...`);
+    
+    try {
+        const response = await fetch(`/auth/${platform}/disconnect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Successfully disconnected from ${platform}`, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(`Failed to disconnect from ${platform}`, 'error');
+        }
+    } catch (error) {
+        showNotification(`Error disconnecting from ${platform}: ${error.message}`, 'error');
+    }
+    
+    hideLoading();
+}
+
+async function saveApiConfig() {
+    showLoading('Saving API configuration...');
+    
+    const formData = new FormData();
+    formData.append('openai_key', document.getElementById('openai-key').value);
+    formData.append('anthropic_key', document.getElementById('anthropic-key').value);
+    formData.append('twitter_client_id', document.getElementById('twitter-client-id').value);
+    formData.append('twitter_client_secret', document.getElementById('twitter-client-secret').value);
+    formData.append('linkedin_client_id', document.getElementById('linkedin-client-id').value);
+    formData.append('linkedin_client_secret', document.getElementById('linkedin-client-secret').value);
+    
+    try {
+        const response = await fetch('/settings/update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('API configuration saved successfully', 'success');
+        } else {
+            showNotification('Failed to save API configuration', 'error');
+        }
+    } catch (error) {
+        showNotification(`Error saving API configuration: ${error.message}`, 'error');
+    }
+    
+    hideLoading();
+}
+
+// Handle startup config form submission
+document.getElementById('startup-config-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    showLoading('Saving startup configuration...');
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch('/settings/update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Startup configuration saved successfully', 'success');
+        } else {
+            showNotification('Failed to save startup configuration', 'error');
+        }
+    } catch (error) {
+        showNotification(`Error saving startup configuration: ${error.message}`, 'error');
+    }
+    
+    hideLoading();
+});
+
+// Refresh connection status periodically
+setInterval(async function() {
+    try {
+        const response = await fetch('/api/auth/status');
+        const status = await response.json();
+        
+        // Update status indicators
+        Object.keys(status).forEach(platform => {
+            const statusElement = document.getElementById(`${platform}-status`);
+            if (statusElement) {
+                if (status[platform].connected) {
+                    statusElement.innerHTML = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Connected</span>';
+                } else {
+                    statusElement.innerHTML = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Not Connected</span>';
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error refreshing auth status:', error);
+    }
+}, 30000); // Refresh every 30 seconds
+</script>
+{% endblock %} 

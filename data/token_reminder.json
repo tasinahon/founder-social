@@ -1,0 +1,6 @@
+{
+  "facebook_token_expiry": "2025-10-06",
+  "renewal_reminder": "2025-10-05",
+  "instructions": "Run 'python facebook_token_manager.py' to renew Facebook token",
+  "created": "2025-08-07T17:20:03.919169"
+}

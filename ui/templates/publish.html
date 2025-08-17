@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Publish Content - Founder Socials{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">📤 Publish Content</h1>
+        
+        <!-- Publishing Options -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">🚀 Quick Publish</h2>
+            <p class="text-gray-600 mb-6">Select content from your drafts to publish to social media platforms.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Content</label>
+                    <select id="contentSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Choose content to publish...</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Platforms</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="platforms" value="twitter" class="rounded text-blue-600" id="twitterCheckbox">
+                            <span class="text-sm">🐦 Twitter</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="platforms" value="linkedin" class="rounded text-blue-600" id="linkedinCheckbox">
+                            <span class="text-sm">💼 LinkedIn</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="platforms" value="facebook" class="rounded text-blue-600">
+                            <span class="text-sm">📘 Facebook</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="platforms" value="wordpress" class="rounded text-blue-600">
+                            <span class="text-sm">📝 WordPress</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Twitter Character Counter -->
+                <div id="twitterOptions" class="hidden bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+                    <h3 class="text-sm font-medium text-cyan-800 mb-3">🐦 Twitter Posting Info</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-cyan-700">Character limit: 280</span>
+                            <span id="twitterCharCount" class="text-sm font-mono text-cyan-600">0/280</span>
+                        </div>
+                        <div class="text-xs text-cyan-500">Content will be automatically truncated if too long</div>
+                    </div>
+                </div>
+                
+                <!-- LinkedIn Posting Mode Selection -->
+                <div id="linkedinOptions" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 class="text-sm font-medium text-blue-800 mb-3">💼 LinkedIn Posting Mode</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2">
+                            <input type="radio" name="linkedin_mode" value="personal" class="text-blue-600" checked>
+                            <span class="text-sm text-blue-700">👤 Personal Profile</span>
+                            <span class="text-xs text-blue-500">(Posts to your personal LinkedIn feed)</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="radio" name="linkedin_mode" value="company" class="text-blue-600">
+                            <span class="text-sm text-blue-700">🏢 Company Page</span>
+                            <span class="text-xs text-blue-500">(Posts to your company LinkedIn page)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <button id="publishBtn" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    🚀 Publish Now
+                </button>
+            </div>
+        </div>
+        
+        <!-- Recent Publications -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">📊 Recent Publications</h2>
+            <div id="recentPublications" class="space-y-4">
+                <p class="text-gray-500">No recent publications found.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load available content
+async function loadContent() {
+    try {
+        const response = await fetch('/create/drafts');
+        const data = await response.json();
+        const select = document.getElementById('contentSelect');
+        
+        select.innerHTML = '<option value="">Choose content to publish...</option>';
+        
+        if (data.drafts && data.drafts.length > 0) {
+            data.drafts.forEach(draft => {
+                const option = document.createElement('option');
+                option.value = draft.id;
+                
+                // Use enhanced metadata for better display
+                const metadata = draft.metadata || {};
+                const displayTitle = metadata.title || metadata.display_name || 
+                                   (metadata.topic ? `${metadata.topic} (${draft.type})` : 
+                                   `${draft.type} content`);
+                
+                option.textContent = displayTitle;
+                
+                // Add preview and additional info as data attributes
+                if (metadata.preview) {
+                    option.title = metadata.preview;
+                }
+                
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading content:', error);
+    }
+}
+
+// Publish content
+document.getElementById('publishBtn').addEventListener('click', async () => {
+    const contentId = document.getElementById('contentSelect').value;
+    const platforms = Array.from(document.querySelectorAll('input[name="platforms"]:checked')).map(cb => cb.value);
+    const linkedinMode = document.querySelector('input[name="linkedin_mode"]:checked')?.value;
+    
+    if (!contentId) {
+        alert('Please select content to publish');
+        return;
+    }
+    
+    if (platforms.length === 0) {
+        alert('Please select at least one platform');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('content_id', contentId);
+        platforms.forEach(platform => formData.append('platforms', platform));
+        
+        // Add LinkedIn posting mode if LinkedIn is selected
+        if (platforms.includes('linkedin') && linkedinMode) {
+            formData.append('linkedin_mode', linkedinMode);
+        }
+        
+        const response = await fetch('/publish/content', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            let message = `✅ Published to ${result.published_platforms}/${result.total_platforms} platforms successfully!`;
+            if (result.linkedin_mode) {
+                message += `\n💼 LinkedIn posted as: ${result.linkedin_mode}`;
+            }
+            alert(message);
+            loadRecentPublications();
+        } else {
+            alert('❌ Publishing failed. Check the logs for details.');
+        }
+    } catch (error) {
+        console.error('Error publishing:', error);
+        alert('❌ Publishing failed. Check the logs for details.');
+    }
+});
+
+// Show/hide LinkedIn options based on checkbox
+document.getElementById('linkedinCheckbox').addEventListener('change', function() {
+    const linkedinOptions = document.getElementById('linkedinOptions');
+    if (this.checked) {
+        linkedinOptions.classList.remove('hidden');
+    } else {
+        linkedinOptions.classList.add('hidden');
+    }
+});
+
+// Show/hide Twitter options based on checkbox
+document.getElementById('twitterCheckbox').addEventListener('change', function() {
+    const twitterOptions = document.getElementById('twitterOptions');
+    if (this.checked) {
+        twitterOptions.classList.remove('hidden');
+        updateTwitterCharCount();
+    } else {
+        twitterOptions.classList.add('hidden');
+    }
+});
+
+// Update Twitter character count
+function updateTwitterCharCount() {
+    const contentSelect = document.getElementById('contentSelect');
+    const selectedOption = contentSelect.options[contentSelect.selectedIndex];
+    if (selectedOption && selectedOption.dataset.content) {
+        const content = selectedOption.dataset.content;
+        const charCount = content.length;
+        const charCountElement = document.getElementById('twitterCharCount');
+        
+        charCountElement.textContent = `${charCount}/280`;
+        
+        // Color coding based on character count
+        if (charCount > 280) {
+            charCountElement.className = 'text-sm font-mono text-red-600';
+        } else if (charCount > 240) {
+            charCountElement.className = 'text-sm font-mono text-yellow-600';
+        } else {
+            charCountElement.className = 'text-sm font-mono text-cyan-600';
+        }
+    }
+}
+
+// Update character count when content selection changes
+document.getElementById('contentSelect').addEventListener('change', function() {
+    if (document.getElementById('twitterCheckbox').checked) {
+        updateTwitterCharCount();
+    }
+});
+
+// Load recent publications (placeholder)
+function loadRecentPublications() {
+    const container = document.getElementById('recentPublications');
+    container.innerHTML = `
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p class="text-green-800">✅ Content published successfully at ${new Date().toLocaleString()}</p>
+        </div>
+    `;
+}
+
+// Load content on page load
+document.addEventListener('DOMContentLoaded', loadContent);
+</script>
+{% endblock %}

@@ -1,0 +1,201 @@
+# Founder Socials AI Agent - Example Configuration
+# Copy this file to config.yaml and update with your actual values
+
+# AI Provider Settings
+ai:
+  provider: "gpt4o"  # openai, azure_openai, deepseek_r1, gpt4o
+  openai:
+    api_key: "sk-your-openai-api-key-here"
+    model: "gpt-4-turbo-preview"
+    temperature: 0.7
+  azure_openai:
+    api_key: "your-azure-openai-key"
+    azure_endpoint: "https://your-resource.openai.azure.com/"
+    model: "gpt-4-turbo-preview"
+    api_version: "2024-12-01-preview"
+    temperature: 0.7
+  deepseek_r1:
+    api_key: "your-deepseek-key"
+    azure_endpoint: "https://your-resource.openai.azure.com/"
+    api_version: "2024-12-01-preview"
+    temperature: 0.7
+  gpt4o:
+    api_key: "your-gpt4o-key"
+    endpoint: "https://your-resource.openai.azure.com/openai/deployments/gpt-4o"
+    temperature: 0.7
+
+# Startup Information
+startup:
+  name: "Your Startup Name"
+  industry: "Technology"
+  description: "Brief description of your startup and what you do"
+  target_audience: "Startup founders, tech professionals, entrepreneurs"
+  brand_voice: "Professional yet approachable, innovative, helpful, authentic"
+  website: "https://yourstartup.com"
+  blog_url: "https://yourstartup.com/blog"
+
+# Content Strategy
+content_strategy:
+  blog_frequency: 2  # posts per week
+  social_frequency: 5  # posts per week
+  preferred_content_types:
+    - "industry insights"
+    - "startup lessons"
+    - "product updates"
+    - "team culture"
+  content_themes:
+    - "innovation"
+    - "growth"
+    - "community"
+    - "transparency"
+
+# API Keys for OAuth Authentication
+api_keys:
+  openai:
+    api_key: "sk-your-openai-key"
+  azure_openai:
+    api_key: "your-azure-key"
+    azure_endpoint: "https://your-resource.openai.azure.com/"
+  deepseek_r1:
+    api_key: "your-deepseek-key"
+    azure_endpoint: "https://your-resource.openai.azure.com/"
+  gpt4o:
+    api_key: "your-gpt4o-key"
+    endpoint: "https://your-resource.openai.azure.com/openai/deployments/gpt-4o"
+  twitter:
+    client_id: "your-twitter-client-id"
+    client_secret: "your-twitter-client-secret"
+  linkedin:
+    client_id: "your-linkedin-client-id"
+    client_secret: "your-linkedin-client-secret"
+  facebook:
+    client_id: "your-facebook-client-id"
+    client_secret: "your-facebook-client-secret"
+  instagram:
+    client_id: "your-instagram-client-id"
+    client_secret: "your-instagram-client-secret"
+
+# Social Media Platforms (Legacy - for backward compatibility)
+social_media:
+  twitter:
+    enabled: true
+    api_key: "your-twitter-api-key"
+    api_secret: "your-twitter-api-secret"
+    access_token: "your-twitter-access-token"
+    access_token_secret: "your-twitter-access-token-secret"
+    auto_post: true
+  
+  linkedin:
+    enabled: true
+    client_id: "your-linkedin-client-id"
+    client_secret: "your-linkedin-client-secret"
+    access_token: "your-linkedin-access-token"
+    auto_post: true
+  
+  facebook:
+    enabled: false
+    app_id: "your-facebook-app-id"
+    app_secret: "your-facebook-app-secret"
+    access_token: "your-facebook-access-token"
+    page_id: "your-facebook-page-id"
+    auto_post: false
+  
+  instagram:
+    enabled: false
+    username: "your-instagram-username"
+    password: "your-instagram-password"
+    auto_post: false
+
+# Blog Platforms
+blog_platforms:
+  wordpress:
+    enabled: true
+    url: "https://yourstartup.com"
+    username: "your-wordpress-username"
+    password: "your-wordpress-password"
+    auto_post: true
+  
+  medium:
+    enabled: false
+    access_token: "your-medium-access-token"
+    auto_post: false
+  
+  ghost:
+    enabled: false
+    url: "https://your-ghost-blog.com"
+    api_key: "your-ghost-api-key"
+    auto_post: false
+
+# Analytics & SEO
+analytics:
+  google_analytics:
+    enabled: false
+    tracking_id: "GA-XXXXXXXXX-X"
+    credentials_file: "path/to/credentials.json"
+  
+  google_search_console:
+    enabled: false
+    site_url: "https://yourstartup.com"
+    credentials_file: "path/to/credentials.json"
+
+# Publishing Schedule
+publishing:
+  optimal_times:
+    twitter: ["09:00", "12:00", "17:00"]
+    linkedin: ["08:00", "12:00", "17:00"]
+    facebook: ["09:00", "15:00", "19:00"]
+    instagram: ["12:00", "18:00", "20:00"]
+    blog: ["10:00", "14:00"]
+  
+  timezone: "UTC"
+  auto_schedule: true
+  buffer_time: 30  # minutes before optimal time
+
+# MCP Servers
+mcp:
+  file_system:
+    enabled: true
+    root_path: "./data"
+  
+  git:
+    enabled: true
+    repository_url: "https://github.com/yourusername/founder-socials-content"
+    branch: "main"
+    auto_commit: true
+  
+  web_search:
+    enabled: true
+    search_engine: "google"
+    max_results: 5
+  
+  database:
+    enabled: true
+    type: "sqlite"
+    connection_string: "sqlite:///./data/content.db"
+
+# Content Templates
+templates:
+  blog_post:
+    structure:
+      - "introduction"
+      - "main_content"
+      - "conclusion"
+      - "call_to_action"
+    min_words: 800
+    max_words: 2000
+  
+  social_post:
+    max_length:
+      twitter: 280
+      linkedin: 1300
+      facebook: 63206
+      instagram: 2200
+    include_hashtags: true
+    include_cta: true
+
+# Logging
+logging:
+  level: "INFO"
+  file: "./logs/founder_socials.log"
+  max_size: "10MB"
+  backup_count: 5 

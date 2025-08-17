@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Authentication Error - {{ startup_name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div class="text-center">
+                <!-- Error Icon -->
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+                
+                <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                    Connection Failed
+                </h2>
+                
+                <p class="mt-2 text-sm text-gray-600">
+                    We couldn't connect your {{ platform|title }} account.
+                </p>
+            </div>
+
+            <!-- Error Details -->
+            <div class="mt-6 bg-red-50 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-red-900 mb-3">Error Details</h3>
+                <div class="text-sm text-red-700">
+                    <p><strong>Platform:</strong> {{ platform|title }}</p>
+                    <p><strong>Error:</strong> {{ error }}</p>
+                </div>
+            </div>
+
+            <!-- Troubleshooting -->
+            <div class="mt-6">
+                <div class="rounded-md bg-yellow-50 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">
+                                Troubleshooting Tips
+                            </h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Check that your API credentials are correct</li>
+                                    <li>Ensure your app has the required permissions</li>
+                                    <li>Verify your redirect URI is properly configured</li>
+                                    <li>Try refreshing the page and connecting again</li>
+                                    <li>Contact support if the issue persists</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Platform-specific help -->
+            <div class="mt-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Platform Setup Guide</h3>
+                <div class="space-y-3">
+                    {% if platform == 'twitter' %}
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-2">Twitter/X Setup</h4>
+                        <ol class="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                            <li>Go to <a href="https://developer.twitter.com" class="text-blue-600 hover:text-blue-500" target="_blank">Twitter Developer Portal</a></li>
+                            <li>Create a new app or use an existing one</li>
+                            <li>Enable OAuth 2.0 with PKCE</li>
+                            <li>Add redirect URI: <code class="bg-gray-200 px-1 rounded">http://localhost:8000/auth/twitter/callback</code></li>
+                            <li>Copy Client ID and Client Secret to your config</li>
+                        </ol>
+                    </div>
+                    {% elif platform == 'linkedin' %}
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-2">LinkedIn Setup</h4>
+                        <ol class="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                            <li>Go to <a href="https://www.linkedin.com/developers" class="text-blue-600 hover:text-blue-500" target="_blank">LinkedIn Developers</a></li>
+                            <li>Create a new app</li>
+                            <li>Request access to Marketing Developer Platform</li>
+                            <li>Add redirect URI: <code class="bg-gray-200 px-1 rounded">http://localhost:8000/auth/linkedin/callback</code></li>
+                            <li>Copy Client ID and Client Secret to your config</li>
+                        </ol>
+                    </div>
+                    {% elif platform == 'facebook' %}
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-2">Facebook Setup</h4>
+                        <ol class="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                            <li>Go to <a href="https://developers.facebook.com" class="text-blue-600 hover:text-blue-500" target="_blank">Facebook Developers</a></li>
+                            <li>Create a new app</li>
+                            <li>Add Facebook Login product</li>
+                            <li>Add redirect URI: <code class="bg-gray-200 px-1 rounded">http://localhost:8000/auth/facebook/callback</code></li>
+                            <li>Copy App ID and App Secret to your config</li>
+                        </ol>
+                    </div>
+                    {% elif platform == 'instagram' %}
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-2">Instagram Setup</h4>
+                        <ol class="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                            <li>Go to <a href="https://developers.facebook.com" class="text-blue-600 hover:text-blue-500" target="_blank">Facebook Developers</a></li>
+                            <li>Create a new app or use existing Facebook app</li>
+                            <li>Add Instagram Basic Display product</li>
+                            <li>Add redirect URI: <code class="bg-gray-200 px-1 rounded">http://localhost:8000/auth/instagram/callback</code></li>
+                            <li>Copy App ID and App Secret to your config</li>
+                        </ol>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 space-y-3">
+                <button onclick="retryConnection()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                    Try Again
+                </button>
+                
+                <a href="/settings" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                    Back to Settings
+                </a>
+                
+                <a href="/" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                    Go to Dashboard
+                </a>
+            </div>
+
+            <!-- Additional Help -->
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">
+                    Still having trouble? Check out our 
+                    <a href="#" class="text-blue-600 hover:text-blue-500">documentation</a> 
+                    or <a href="#" class="text-blue-600 hover:text-blue-500">contact support</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function retryConnection() {
+    window.location.href = `/auth/{{ platform }}/connect`;
+}
+
+// Auto-redirect to settings after 30 seconds
+setTimeout(function() {
+    window.location.href = '/settings';
+}, 30000);
+
+// Show countdown
+let countdown = 30;
+const countdownElement = document.createElement('div');
+countdownElement.className = 'mt-4 text-center text-sm text-gray-500';
+document.querySelector('.text-center').appendChild(countdownElement);
+
+const countdownInterval = setInterval(function() {
+    countdown--;
+    countdownElement.textContent = `Redirecting to settings in ${countdown} seconds...`;
+    if (countdown <= 0) {
+        clearInterval(countdownInterval);
+    }
+}, 1000);
+</script>
+{% endblock %} 
