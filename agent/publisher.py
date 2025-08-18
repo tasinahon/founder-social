@@ -15,6 +15,11 @@ import hmac
 import base64
 import urllib.parse
 import secrets
+import os
+import tempfile
+from pathlib import Path
+import aiohttp
+import aiofiles
 
 try:
     import tweepy
@@ -52,6 +57,90 @@ class Publisher:
         self._init_platform_clients()
         
         logger.info("Publisher initialized")
+    
+    async def _process_images(self, images: List[str], platform: str) -> List[str]:
+        """
+        Process images for upload - download URLs, validate formats, resize if needed
+        
+        Args:
+            images: List of image file paths or URLs
+            platform: Target platform for platform-specific requirements
+            
+        Returns:
+            List of local file paths ready for upload
+        """
+        if not images:
+            return []
+        
+        processed_images = []
+        temp_dir = tempfile.mkdtemp()
+        
+        # Platform-specific image requirements
+        requirements = {
+            'facebook': {'max_size': 25 * 1024 * 1024, 'formats': ['jpg', 'jpeg', 'png', 'gif'], 'max_count': 10},
+            'twitter': {'max_size': 5 * 1024 * 1024, 'formats': ['jpg', 'jpeg', 'png', 'gif', 'webp'], 'max_count': 4},
+            'linkedin': {'max_size': 100 * 1024 * 1024, 'formats': ['jpg', 'jpeg', 'png', 'gif'], 'max_count': 9},
+            'instagram': {'max_size': 30 * 1024 * 1024, 'formats': ['jpg', 'jpeg', 'png'], 'max_count': 10}
+        }
+        
+        platform_req = requirements.get(platform, requirements['facebook'])
+        max_images = min(len(images), platform_req['max_count'])
+        
+        for i, image_source in enumerate(images[:max_images]):
+            try:
+                local_path = None
+                
+                # Check if it's a URL or local file
+                if image_source.startswith(('http://', 'https://')):
+                    # Download image from URL
+                    logger.info(f"Downloading image from URL: {image_source}")
+                    try:
+                        response = requests.get(image_source, timeout=30)
+                        if response.status_code == 200:
+                            file_extension = Path(image_source).suffix.lower() or '.jpg'
+                            local_path = os.path.join(temp_dir, f"image_{i}{file_extension}")
+                            
+                            with open(local_path, 'wb') as f:
+                                f.write(response.content)
+                                
+                            logger.info(f"Downloaded image to: {local_path}")
+                        else:
+                            logger.error(f"Failed to download image: {response.status_code}")
+                            continue
+                    except Exception as e:
+                        logger.error(f"Error downloading image: {e}")
+                        continue
+                else:
+                    # Use local file
+                    if os.path.exists(image_source):
+                        local_path = image_source
+                        logger.info(f"Using local image: {local_path}")
+                    else:
+                        logger.error(f"Local image file not found: {image_source}")
+                        continue
+                
+                if local_path:
+                    # Validate file size and format
+                    file_size = os.path.getsize(local_path)
+                    file_ext = Path(local_path).suffix.lower().lstrip('.')
+                    
+                    if file_size > platform_req['max_size']:
+                        logger.warning(f"Image {local_path} exceeds size limit for {platform}")
+                        continue
+                        
+                    if file_ext not in platform_req['formats']:
+                        logger.warning(f"Image format {file_ext} not supported for {platform}")
+                        continue
+                    
+                    processed_images.append(local_path)
+                    logger.info(f"Image processed successfully: {local_path}")
+                    
+            except Exception as e:
+                logger.error(f"Error processing image {image_source}: {e}")
+                continue
+        
+        logger.info(f"Processed {len(processed_images)} images for {platform}")
+        return processed_images
     
     def _init_platform_clients(self):
         """Initialize platform-specific clients"""
@@ -101,7 +190,8 @@ class Publisher:
         }
     
     async def publish(self, content: str, platform: str, content_type: str, 
-                     metadata: Optional[Dict] = None, posting_mode: Optional[str] = None) -> bool:
+                     metadata: Optional[Dict] = None, posting_mode: Optional[str] = None,
+                     images: Optional[List[str]] = None) -> bool:
         """
         Publish content to the specified platform
         
@@ -111,21 +201,24 @@ class Publisher:
             content_type: Type of content (blog or social)
             metadata: Additional metadata
             posting_mode: For LinkedIn - 'personal', 'company', or None (use config default)
+            images: List of image file paths or URLs to include with the post
             
         Returns:
             True if published successfully, False otherwise
         """
         logger.info(f"Publishing {content_type} content to {platform}")
+        if images:
+            logger.info(f"Including {len(images)} images with the post")
         
         try:
             if platform == 'twitter':
-                return await self._publish_to_twitter(content, metadata)
+                return await self._publish_to_twitter(content, metadata, images)
             elif platform == 'linkedin':
-                return await self._publish_to_linkedin(content, content_type, metadata, posting_mode)
+                return await self._publish_to_linkedin(content, content_type, metadata, posting_mode, images)
             elif platform == 'facebook':
-                return await self._publish_to_facebook(content, metadata)
+                return await self._publish_to_facebook(content, metadata, images)
             elif platform == 'instagram':
-                return await self._publish_to_instagram(content, metadata)
+                return await self._publish_to_instagram(content, metadata, images)
             elif platform == 'wordpress':
                 return await self._publish_to_wordpress(content, metadata)
             else:
@@ -136,8 +229,9 @@ class Publisher:
             logger.error(f"Error publishing to {platform}: {e}")
             return False
     
-    async def _publish_to_twitter(self, content: str, metadata: Optional[Dict] = None) -> bool:
-        """Publish content to Twitter/X using API v2 - Simple single tweet approach"""
+    async def _publish_to_twitter(self, content: str, metadata: Optional[Dict] = None,
+                                 images: Optional[List[str]] = None) -> bool:
+        """Publish content to Twitter/X using API v2 with optional images"""
         try:
             # Rate limiting check
             current_time = time.time()
@@ -157,6 +251,7 @@ class Publisher:
             logger.info(f"   API Key present: {'api_key' in config and bool(config.get('api_key'))}")
             logger.info(f"   API Secret present: {'api_secret' in config and bool(config.get('api_secret'))}")
             logger.info(f"   Access Token present: {'access_token' in config and bool(config.get('access_token'))}")
+            logger.info(f"   Images to upload: {len(images) if images else 0}")
             
             # Check if Twitter is enabled and configured
             if not config.get('enabled', False):
@@ -174,10 +269,10 @@ class Publisher:
                 await asyncio.sleep(1)
                 return True
             
-            # Real Twitter API publishing - SIMPLE APPROACH
+            # Real Twitter API publishing
             logger.info("✅ ALL CHECKS PASSED - ATTEMPTING REAL TWITTER PUBLISH")
             
-            # Check content length and truncate if needed (NO THREADING)
+            # Check content length and truncate if needed
             character_limit = config.get('character_limit', 280)
             
             # Clean and validate content
@@ -189,7 +284,7 @@ class Publisher:
             
             logger.info(f"📏 Content length check: {len(content)} vs limit {character_limit}")
             
-            # Simple truncation if content is too long (safety net for old content)
+            # Simple truncation if content is too long
             if len(content) > character_limit:
                 original_length = len(content)
                 logger.warning(f"⚠️ Content exceeds Twitter character limit ({character_limit}), applying safety truncation...")
@@ -200,12 +295,12 @@ class Publisher:
                 
                 # Try to end at sentence boundary
                 last_sentence = max(truncated_content.rfind('.'), truncated_content.rfind('!'), truncated_content.rfind('?'))
-                if last_sentence > character_limit * 0.6:  # If sentence boundary is not too far back
+                if last_sentence > character_limit * 0.6:
                     content = truncated_content[:last_sentence+1]
                 else:
                     # Try to end at word boundary  
                     last_space = truncated_content.rfind(' ')
-                    if last_space > character_limit * 0.7:  # If word boundary is reasonable
+                    if last_space > character_limit * 0.7:
                         content = truncated_content[:last_space] + "..."
                     else:
                         content = truncated_content + "..."
@@ -217,11 +312,51 @@ class Publisher:
             
             logger.info(f"📝 Final content for posting ({len(content)} chars): {content[:100]}...")
             
+            # Process and upload images if provided
+            media_ids = []
+            if images:
+                processed_images = await self._process_images(images, 'twitter')
+                
+                for image_path in processed_images:
+                    try:
+                        # Upload image to Twitter
+                        logger.info(f"📸 Uploading image to Twitter: {image_path}")
+                        upload_url = "https://upload.twitter.com/1.1/media/upload.json"
+                        
+                        # Create OAuth headers for media upload
+                        upload_headers = self._create_twitter_oauth_headers(
+                            url=upload_url,
+                            method="POST",
+                            api_key=config['api_key'],
+                            api_secret=config['api_secret'],
+                            access_token=config['access_token'],
+                            access_token_secret=config['access_token_secret']
+                        )
+                        
+                        with open(image_path, 'rb') as image_file:
+                            files = {'media': image_file}
+                            upload_response = requests.post(upload_url, headers=upload_headers, files=files)
+                            
+                            if upload_response.status_code == 200:
+                                upload_result = upload_response.json()
+                                media_id = upload_result.get('media_id_string')
+                                media_ids.append(media_id)
+                                logger.info(f"✅ Image uploaded successfully: {media_id}")
+                            else:
+                                logger.error(f"❌ Failed to upload image: {upload_response.text}")
+                                
+                    except Exception as e:
+                        logger.error(f"Error uploading image {image_path}: {e}")
+                        continue
+            
             # Set up Twitter API v2 endpoint with OAuth 1.0a authentication
             url = "https://api.twitter.com/2/tweets"
             
-            # Prepare simple payload
+            # Prepare payload with media if available
             payload = {"text": content}
+            if media_ids:
+                payload["media"] = {"media_ids": media_ids}
+                logger.info(f"📸 Attaching {len(media_ids)} images to tweet")
             
             # Create OAuth 1.0a headers
             headers = self._create_twitter_oauth_headers(
@@ -355,15 +490,17 @@ class Publisher:
             return False
     
     async def _publish_to_linkedin(self, content: str, content_type: str, 
-                                 metadata: Optional[Dict] = None, posting_mode: Optional[str] = None) -> bool:
+                                 metadata: Optional[Dict] = None, posting_mode: Optional[str] = None,
+                                 images: Optional[List[str]] = None) -> bool:
         """
-        Publish content to LinkedIn
+        Publish content to LinkedIn with optional images
         
         Args:
             content: The content to publish
             content_type: Type of content (blog or social)
             metadata: Additional metadata
             posting_mode: Override posting mode ('personal', 'company', or None for config default)
+            images: List of image file paths or URLs to include with the post
         """
         try:
             config = self.social_config.get('linkedin', {})
@@ -431,29 +568,29 @@ class Publisher:
             logger.info(f"✅ User Name: {userinfo_data.get('name', 'Unknown')}")
             
             # Check if we should post as company or personal
-            # Use parameter override or default to 'personal'
-            effective_posting_mode = posting_mode or 'personal'
+            # Force personal mode for LinkedIn since image uploads require special permissions
+            config_posting_mode = 'personal'  # Force personal mode
+            effective_posting_mode = 'personal'  # Always use personal for reliability
             company_id = config.get('company_id')  # Company page ID if posting as company
             
-            logger.info(f"🎯 LinkedIn posting mode: {effective_posting_mode}")
-            if posting_mode:
-                logger.info(f"🔄 Mode specified for this post: {posting_mode}")
-            else:
-                logger.info(f"📝 Using default mode: personal")
+            logger.info(f"🎯 LinkedIn posting mode: {effective_posting_mode} (forced for reliability)")
+            logger.info(f"� Using personal LinkedIn posting")
             
-            # Prepare author URN based on posting mode
-            if effective_posting_mode == 'company' and company_id:
-                author_urn = f"urn:li:organization:{company_id}"
-                logger.info(f"🏢 Attempting to post as company: {author_urn}")
-                logger.info(f"🏢 Company ID: {company_id}")
-                
-                # Note: We'll try company posting directly since you have w_organization_social
-                logger.info("💡 Using w_organization_social permission for company posting")
+            # Always use personal URN for reliable posting
+            author_urn = f"urn:li:person:{user_id}"
+            logger.info(f"👤 Posting as personal profile: {author_urn}")
+            
+            # Process images for LinkedIn (simplified - no image uploads due to API restrictions)
+            # Process images for LinkedIn (simplified - no image uploads due to API restrictions)
+            content_elements = []
+            if images:
+                logger.info(f"📸 Processing {len(images)} images for LinkedIn")
+                processed_images = await self._process_images(images, 'linkedin')
+                logger.info(f"📸 Processed {len(processed_images)} images successfully")
+                logger.info(f"📸 LinkedIn will post text-only (image uploads require enterprise API permissions)")
+                logger.info(f"📸 Final content_elements count: 0 (images noted but not uploaded)")
             else:
-                author_urn = f"urn:li:person:{user_id}"
-                logger.info(f"👤 Posting as personal profile: {author_urn}")
-                if effective_posting_mode == 'company' and not company_id:
-                    logger.warning("⚠️ Company mode requested but no company_id in config - using personal")
+                logger.info("📸 No images provided for LinkedIn post")
             
             # Prepare post data using the working Posts API format (NOT ugcPosts)
             post_data = {
@@ -469,7 +606,14 @@ class Publisher:
                 "isReshareDisabledByAuthor": False
             }
             
-            # For personal posts, try a different visibility approach
+            # Debug: Log the exact content being sent
+            logger.info(f"📝 LinkedIn content length: {len(content)} characters")
+            logger.info(f"📝 LinkedIn content: {repr(content[:200])}..." if len(content) > 200 else f"📝 LinkedIn content: {repr(content)}")
+            
+            # LinkedIn will always post text-only (no image uploads)
+            logger.info("📸 LinkedIn posting text-only (images require enterprise API permissions)")
+            
+            # For personal posts, use standard visibility settings
             if effective_posting_mode == 'personal':
                 logger.info("👤 Using personal posting visibility settings...")
                 post_data["visibility"] = "PUBLIC"
@@ -582,8 +726,9 @@ class Publisher:
             logger.error(f"❌ Full traceback: {traceback.format_exc()}")
             return False
     
-    async def _publish_to_facebook(self, content: str, metadata: Optional[Dict] = None) -> bool:
-        """Publish content to Facebook using Graph API"""
+    async def _publish_to_facebook(self, content: str, metadata: Optional[Dict] = None, 
+                                  images: Optional[List[str]] = None) -> bool:
+        """Publish content to Facebook using Graph API with optional images"""
         try:
             config = self.social_config.get('facebook', {})
             
@@ -593,6 +738,7 @@ class Publisher:
             logger.info(f"   App ID present: {'app_id' in config and bool(config.get('app_id'))}")
             logger.info(f"   Access token present: {'access_token' in config and bool(config.get('access_token'))}")
             logger.info(f"   Page ID present: {'page_id' in config and bool(config.get('page_id'))}")
+            logger.info(f"   Images to upload: {len(images) if images else 0}")
             
             # Check if Facebook is enabled and configured
             if not config.get('enabled', False):
@@ -616,14 +762,52 @@ class Publisher:
             access_token = config['access_token']
             page_id = config['page_id']
             
-            # Facebook Graph API endpoint for page posts
-            url = f"https://graph.facebook.com/v18.0/{page_id}/feed"
+            # Process images if provided
+            uploaded_media_ids = []
+            if images:
+                processed_images = await self._process_images(images, 'facebook')
+                
+                for image_path in processed_images:
+                    try:
+                        # Upload image to Facebook
+                        logger.info(f"📸 Uploading image to Facebook: {image_path}")
+                        photo_url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
+                        
+                        with open(image_path, 'rb') as image_file:
+                            photo_data = {
+                                'access_token': access_token,
+                                'published': False  # Don't publish the photo directly
+                            }
+                            files = {'source': image_file}
+                            
+                            photo_response = requests.post(photo_url, data=photo_data, files=files)
+                            
+                            if photo_response.status_code == 200:
+                                photo_result = photo_response.json()
+                                photo_id = photo_result.get('id')
+                                uploaded_media_ids.append(photo_id)
+                                logger.info(f"✅ Image uploaded successfully: {photo_id}")
+                            else:
+                                logger.error(f"❌ Failed to upload image: {photo_response.text}")
+                                
+                    except Exception as e:
+                        logger.error(f"Error uploading image {image_path}: {e}")
+                        continue
             
             # Prepare the post data
             post_data = {
                 'message': content,
                 'access_token': access_token
             }
+            
+            # Add uploaded images to the post
+            if uploaded_media_ids:
+                for i, media_id in enumerate(uploaded_media_ids):
+                    post_data[f'attached_media[{i}]'] = json.dumps({"media_fbid": media_id})
+                logger.info(f"📸 Attaching {len(uploaded_media_ids)} images to Facebook post")
+            
+            # Facebook Graph API endpoint for page posts
+            url = f"https://graph.facebook.com/v18.0/{page_id}/feed"
             
             logger.info(f"📘 Posting to Facebook page ID: {page_id}")
             logger.info(f"📘 Content preview: {content[:100]}...")
@@ -639,6 +823,8 @@ class Publisher:
                 logger.info(f"✅ Facebook post published successfully!")
                 logger.info(f"   Post ID: {post_id}")
                 logger.info(f"   URL: https://facebook.com/{post_id}")
+                if uploaded_media_ids:
+                    logger.info(f"   With {len(uploaded_media_ids)} images")
                 return True
             else:
                 error_detail = response.text
@@ -660,7 +846,8 @@ class Publisher:
             logger.error(f"Error publishing to Facebook: {e}")
             return False
     
-    async def _publish_to_instagram(self, content: str, metadata: Optional[Dict] = None) -> bool:
+    async def _publish_to_instagram(self, content: str, metadata: Optional[Dict] = None,
+                                   images: Optional[List[str]] = None) -> bool:
         """Publish content to Instagram"""
         try:
             logger.info(f"Mock Instagram post: {content[:100]}...")

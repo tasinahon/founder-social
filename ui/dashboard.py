@@ -4,7 +4,7 @@ Founder Socials AI Agent - Web Dashboard
 FastAPI-based web interface for the AI agent.
 """
 
-from fastapi import FastAPI, Request, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Request, Form, HTTPException, BackgroundTasks, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -19,6 +19,15 @@ import logging
 
 from agent.core import FounderSocialsAgent, ContentTask
 from agent.social_auth import SocialAuthManager
+
+# Configure logging to show detailed logs
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # This will show logs in the terminal
+    ]
+)
 
 logger = logging.getLogger(__name__)
 
@@ -384,6 +393,97 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             logger.error(f"Error publishing content: {e}")
             raise HTTPException(status_code=500, detail=str(e))
     
+    @app.post("/publish/content-with-images")
+    async def publish_content_with_images(
+        request: Request,
+        content: str = Form(...),
+        platforms: str = Form(...),
+        content_type: str = Form("social"),
+        images: List = None
+    ):
+        """Publish content with images to specified platforms."""
+        try:
+            import tempfile
+            import os
+            
+            # Parse platforms from JSON string
+            import json
+            platform_list = json.loads(platforms)
+            
+            logger.info(f"Publishing content with images to platforms: {platform_list}")
+            logger.info(f"Content length: {len(content)}")
+            
+            # Handle uploaded images
+            image_paths = []
+            if images:
+                # Get files from the request
+                form = await request.form()
+                uploaded_files = form.getlist("images")
+                
+                for uploaded_file in uploaded_files:
+                    if uploaded_file.filename:
+                        # Save uploaded file temporarily
+                        temp_dir = tempfile.mkdtemp()
+                        file_path = os.path.join(temp_dir, uploaded_file.filename)
+                        
+                        with open(file_path, "wb") as buffer:
+                            buffer.write(await uploaded_file.read())
+                        
+                        image_paths.append(file_path)
+                        logger.info(f"Saved uploaded image: {file_path}")
+            
+            logger.info(f"Processing {len(image_paths)} images")
+            
+            # Publish to each platform with images
+            success_count = 0
+            total_platforms = len(platform_list)
+            
+            for platform in platform_list:
+                try:
+                    logger.info(f"Publishing to {platform} with {len(image_paths)} images")
+                    
+                    # Use the enhanced publisher with image support
+                    result = await agent.publisher.publish(
+                        content=content,
+                        platform=platform,
+                        content_type=content_type,
+                        images=image_paths if image_paths else None
+                    )
+                    
+                    if result:
+                        success_count += 1
+                        logger.info(f"✅ Successfully published to {platform}")
+                    else:
+                        logger.error(f"❌ Failed to publish to {platform}")
+                        
+                except Exception as e:
+                    logger.error(f"Error publishing to {platform}: {e}")
+                    continue
+            
+            # Clean up temporary files
+            for file_path in image_paths:
+                try:
+                    os.unlink(file_path)
+                    os.rmdir(os.path.dirname(file_path))
+                except Exception as e:
+                    logger.warning(f"Could not clean up temp file {file_path}: {e}")
+            
+            success = success_count > 0
+            result = {
+                "success": success,
+                "published_platforms": success_count,
+                "total_platforms": total_platforms,
+                "platforms": platform_list,
+                "images_uploaded": len(image_paths)
+            }
+            
+            logger.info(f"Publishing result: {result}")
+            return JSONResponse(content=result)
+            
+        except Exception as e:
+            logger.error(f"Error publishing content with images: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
     @app.get("/analytics", response_class=HTMLResponse)
     async def analytics_page(request: Request):
         """Analytics dashboard page."""
@@ -563,4 +663,13 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             status_code=500
         )
     
-    return app 
+    return app
+
+# Initialize the app at module level for uvicorn
+import os
+from agent.core import FounderSocialsAgent
+
+# Create agent instance for the dashboard
+config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'config.yaml')
+agent = FounderSocialsAgent(config_path)
+app = create_dashboard_app(agent) 

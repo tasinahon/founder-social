@@ -162,6 +162,98 @@
         </div>
     </div>
 </div>
+
+<!-- Image Upload Modal -->
+<div id="imageUploadModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">📸 Add Images & Publish</h3>
+                <button onclick="closeImageUploadModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Image Upload Section -->
+            <div class="py-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Upload Images (Optional)
+                    </label>
+                    
+                    <!-- Drag & Drop Area -->
+                    <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                        <div class="space-y-2">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium text-blue-600 hover:text-blue-500 cursor-pointer">Click to upload</span>
+                                or drag and drop images here
+                            </div>
+                            <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+                        </div>
+                    </div>
+                    
+                    <input type="file" id="imageFiles" multiple accept="image/*" 
+                           onchange="handleImageUpload(event)"
+                           class="hidden">
+                    
+                    <div class="mt-2 flex justify-between items-center">
+                        <p class="text-xs text-gray-500">
+                            Max: 4 images for Twitter, 10 for Facebook/LinkedIn, 1 for Instagram
+                        </p>
+                        <p id="imageCount" class="text-sm font-medium text-blue-600">0 image(s) selected</p>
+                    </div>
+                </div>
+                
+                <!-- Image Preview Grid -->
+                <div id="imagePreviewContainer" class="grid grid-cols-3 gap-3 mb-4"></div>
+                
+                <!-- Platform Selection -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Select Platforms
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" value="facebook" class="platform-checkbox mr-2" checked>
+                            <span class="text-sm">📘 Facebook</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" value="twitter" class="platform-checkbox mr-2" checked>
+                            <span class="text-sm">🐦 Twitter</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" value="linkedin" class="platform-checkbox mr-2" checked>
+                            <span class="text-sm">💼 LinkedIn</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" value="instagram" class="platform-checkbox mr-2">
+                            <span class="text-sm">📷 Instagram</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-between pt-4 border-t">
+                <button onclick="closeImageUploadModal()" 
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                    Cancel
+                </button>
+                <button id="publishButton" onclick="publishWithImages()" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    🚀 Publish Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
@@ -186,7 +278,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const result = await response.json();
             
+            console.log('Response result:', result);
+            
             if (response.ok) {
+                console.log('About to call displayContent with result:', result);
                 displayContent(result);
                 showNotification('Content generated successfully!', 'success');
             } else {
@@ -201,8 +296,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function displayContent(content) {
+    console.log('displayContent called with:', content);
+    
     const contentResult = document.getElementById('contentResult');
     const contentDisplay = document.getElementById('contentDisplay');
+    
+    console.log('contentResult element:', contentResult);
+    console.log('contentDisplay element:', contentDisplay);
     
     // Store the current content for save/publish operations
     window.currentContent = content;
@@ -239,8 +339,8 @@ function displayContent(content) {
                 </div>
             ` : ''}
             <div class="mt-4 flex space-x-4">
-                <button onclick="publishContent(['twitter', 'linkedin'])" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                    📤 Publish to Social Media
+                <button onclick="showImageUploadModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    � Add Images & Publish
                 </button>
                 <button onclick="publishContent(['blog'])" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                     📝 Publish to Blog
@@ -375,6 +475,200 @@ async function loadDrafts() {
 function loadDraft(draftId) {
     // This would load a specific draft for editing
     showNotification('Draft loading functionality coming soon!', 'info');
+}
+
+// Image Upload Modal Functions
+function showImageUploadModal() {
+    if (!window.currentContent) {
+        showNotification('No content to publish!', 'error');
+        return;
+    }
+    
+    document.getElementById('imageUploadModal').classList.remove('hidden');
+    setupDropZone();
+}
+
+function closeImageUploadModal() {
+    document.getElementById('imageUploadModal').classList.add('hidden');
+    clearImagePreviews();
+}
+
+function clearImagePreviews() {
+    document.getElementById('imagePreviewContainer').innerHTML = '';
+    document.getElementById('imageFiles').value = '';
+    window.selectedImages = [];
+    updateImageCount();
+}
+
+function setupDropZone() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('imageFiles');
+    
+    // Click to select files
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // Drag & Drop handlers
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-blue-400', 'bg-blue-50');
+    });
+    
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        
+        const files = Array.from(e.dataTransfer.files);
+        handleImageFiles(files);
+    });
+}
+
+function handleImageUpload(event) {
+    const files = Array.from(event.target.files);
+    handleImageFiles(files);
+}
+
+function handleImageFiles(files) {
+    // Filter only image files
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+        showNotification('Please select valid image files!', 'error');
+        return;
+    }
+    
+    // Check file size (10MB limit)
+    const oversizedFiles = imageFiles.filter(file => file.size > 10 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+        showNotification('Some files are too large (max 10MB per file)', 'error');
+        return;
+    }
+    
+    // Add to existing images or replace
+    if (!window.selectedImages) {
+        window.selectedImages = [];
+    }
+    
+    // Check total image limit
+    const totalImages = window.selectedImages.length + imageFiles.length;
+    if (totalImages > 10) {
+        showNotification('Maximum 10 images allowed', 'error');
+        return;
+    }
+    
+    imageFiles.forEach((file, index) => {
+        window.selectedImages.push(file);
+        createImagePreview(file, window.selectedImages.length - 1);
+    });
+    
+    updateImageCount();
+}
+
+function createImagePreview(file, index) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const imagePreview = document.createElement('div');
+        imagePreview.className = 'relative group';
+        imagePreview.innerHTML = `
+            <img src="${e.target.result}" alt="Preview ${index + 1}" 
+                 class="w-full h-24 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
+            <button onclick="removeImage(${index})" 
+                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs hover:bg-red-600 transition-colors flex items-center justify-center">
+                ×
+            </button>
+            <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg truncate">
+                ${file.name}
+            </div>
+        `;
+        previewContainer.appendChild(imagePreview);
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeImage(index) {
+    if (window.selectedImages && window.selectedImages[index]) {
+        window.selectedImages.splice(index, 1);
+        refreshImagePreviews();
+        updateImageCount();
+    }
+}
+
+function refreshImagePreviews() {
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    previewContainer.innerHTML = '';
+    
+    if (window.selectedImages) {
+        window.selectedImages.forEach((file, index) => {
+            createImagePreview(file, index);
+        });
+    }
+}
+
+function updateImageCount() {
+    const count = window.selectedImages ? window.selectedImages.length : 0;
+    document.getElementById('imageCount').textContent = `${count} image(s) selected`;
+}
+
+async function publishWithImages() {
+    if (!window.currentContent) {
+        showNotification('No content to publish!', 'error');
+        return;
+    }
+    
+    const platforms = [];
+    document.querySelectorAll('.platform-checkbox:checked').forEach(checkbox => {
+        platforms.push(checkbox.value);
+    });
+    
+    if (platforms.length === 0) {
+        showNotification('Please select at least one platform!', 'error');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('content', window.currentContent.content);
+        formData.append('platforms', JSON.stringify(platforms));
+        formData.append('content_type', window.currentContent.content_type || 'social');
+        
+        // Add images if selected
+        if (window.selectedImages && window.selectedImages.length > 0) {
+            window.selectedImages.forEach((file, index) => {
+                formData.append('images', file);
+            });
+        }
+        
+        document.getElementById('publishButton').disabled = true;
+        document.getElementById('publishButton').textContent = 'Publishing...';
+        
+        const response = await fetch('/publish/content-with-images', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showNotification(`Content published to ${result.published_platforms}/${result.total_platforms} platforms!`, 'success');
+            closeImageUploadModal();
+        } else {
+            showNotification('Failed to publish content', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Publishing error:', error);
+        showNotification('Error publishing content', 'error');
+    } finally {
+        document.getElementById('publishButton').disabled = false;
+        document.getElementById('publishButton').textContent = '🚀 Publish Now';
+    }
 }
 </script>
 {% endblock %} 
