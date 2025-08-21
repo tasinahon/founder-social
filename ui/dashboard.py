@@ -20,6 +20,17 @@ import logging
 from agent.core import FounderSocialsAgent, ContentTask
 from agent.social_auth import SocialAuthManager
 
+# Try to import advanced content generator
+try:
+    from agent.advanced_content_generator import (
+        AdvancedContentGenerator, WritingStyle, TargetAudience, 
+        ContentTone, ContentPurpose
+    )
+    ADVANCED_GENERATOR_AVAILABLE = True
+except ImportError:
+    print("⚠️  Advanced content generator not available")
+    ADVANCED_GENERATOR_AVAILABLE = False
+
 # Configure logging to show detailed logs
 logging.basicConfig(
     level=logging.INFO,
@@ -220,6 +231,119 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
         except Exception as e:
             logger.error(f"Error generating content: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+    
+    @app.post("/create/generate-advanced")
+    async def generate_advanced_content(
+        request: Request,
+        topic: str = Form(...),
+        content_type: str = Form("social"),
+        platform: str = Form("general"),
+        writing_style: str = Form("informative"),
+        target_audience: str = Form("startup_founders"),
+        content_tone: str = Form("professional"),
+        content_purpose: str = Form("educate"),
+        content_length: str = Form("medium"),
+        include_data: str = Form("false"),
+        thread_length: Optional[str] = Form("5")
+    ):
+        """Generate advanced content with professional customization."""
+        try:
+            if not ADVANCED_GENERATOR_AVAILABLE:
+                # Fallback to basic generation
+                return await generate_content(request, topic, content_type, platform)
+            
+            # Initialize advanced content generator
+            advanced_generator = AdvancedContentGenerator(agent.config)
+            
+            # Convert string enums to proper enum values
+            try:
+                style_enum = WritingStyle(writing_style)
+                audience_enum = TargetAudience(target_audience)
+                tone_enum = ContentTone(content_tone)
+                purpose_enum = ContentPurpose(content_purpose)
+            except ValueError as e:
+                logger.warning(f"Invalid enum value: {e}, using defaults")
+                style_enum = WritingStyle.INFORMATIVE
+                audience_enum = TargetAudience.STARTUP_FOUNDERS
+                tone_enum = ContentTone.PROFESSIONAL
+                purpose_enum = ContentPurpose.EDUCATE
+            
+            # Prepare additional options
+            additional_options = {
+                'content_length': content_length,
+                'include_data': include_data.lower() == 'true',
+                'thread_length': int(thread_length) if content_type == 'thread' else 5
+            }
+            
+            # Generate advanced content
+            result = await advanced_generator.generate_advanced_content(
+                topic=topic,
+                platform=platform,
+                content_type=content_type,
+                writing_style=style_enum,
+                target_audience=audience_enum,
+                content_tone=tone_enum,
+                content_purpose=purpose_enum,
+                additional_options=additional_options
+            )
+            
+            # Generate unique ID for this content
+            content_id = f"content_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
+            
+            # Generate title
+            title = _generate_content_title(topic, content_type, platform, result['content'])
+            
+            # Enhanced metadata
+            enhanced_metadata = {
+                'topic': topic,
+                'platform': platform,
+                'status': 'draft',
+                'title': title,
+                'display_name': title[:60] + "..." if len(title) > 60 else title,
+                'preview': _generate_content_preview(result['content']),
+                'word_count': result.get('word_count', 0),
+                'char_count': result.get('character_count', 0),
+                'created_display': datetime.now().strftime("%m/%d/%Y at %I:%M %p"),
+                'writing_style': writing_style,
+                'target_audience': target_audience,
+                'content_tone': content_tone,
+                'content_purpose': content_purpose,
+                'engagement_score': result.get('engagement_score', 0),
+                'estimated_read_time': result.get('estimated_read_time', 0),
+                'generator_version': 'advanced_2.0'
+            }
+            
+            # Auto-save as draft
+            await agent.mcp_manager.save_content(
+                content_id=content_id,
+                content=result['content'],
+                content_type=content_type,
+                metadata=enhanced_metadata
+            )
+            
+            # Prepare response
+            response_data = {
+                "id": content_id,
+                "content": result['content'],
+                "content_type": content_type,
+                "platform": platform,
+                "topic": topic,
+                "metadata": result['metadata'],
+                "word_count": result.get('word_count', 0),
+                "character_count": result.get('character_count', 0),
+                "estimated_read_time": result.get('estimated_read_time', 0),
+                "engagement_score": result.get('engagement_score', 0),
+                "suggestions": result.get('suggestions', []),
+                "created_at": datetime.now().isoformat()
+            }
+            
+            logger.info(f"Advanced content generated successfully: {len(result['content'])} chars")
+            return JSONResponse(content=response_data)
+            
+        except Exception as e:
+            logger.error(f"Error generating advanced content: {e}")
+            # Fallback to basic generation on error
+            return await generate_content(request, topic, content_type, platform)
     
     @app.get("/publish", response_class=HTMLResponse)
     async def publish_content_page(request: Request):

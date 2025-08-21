@@ -16,52 +16,204 @@
 
     <!-- Content Creation Form -->
     <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Generate New Content</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">🎯 Professional Content Generation</h2>
         
         <form id="createForm" data-ajax action="/create/generate" method="post" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Basic Content Info -->
+            <div class="grid grid-cols-1 gap-6">
                 <div>
                     <label for="topic" class="block text-sm font-medium text-gray-700 mb-2">
-                        Content Topic *
+                        Content Topic * 
+                        <span class="text-xs text-blue-600 cursor-pointer" onclick="showPromptTips()">💡 Writing Tips</span>
                     </label>
-                    <input type="text" id="topic" name="topic" required
-                           placeholder="e.g., How we built our MVP in 3 months"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="relative">
+                        <textarea id="topic" name="topic" required rows="3"
+                               placeholder="💡 Be specific! Instead of 'AI tips' try: 'The 5 AI tools that doubled our startup's productivity in 2024'"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                        <div class="absolute bottom-2 right-2">
+                            <button type="button" onclick="generateSamplePrompt()" 
+                                    class="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
+                                🎲 Random Example
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Prompt Suggestions -->
+                    <div id="promptSuggestions" class="mt-2 space-y-1 hidden">
+                        <div class="text-xs font-medium text-gray-700 mb-1">💡 Smart Suggestions:</div>
+                        <div id="suggestionButtons" class="flex flex-wrap gap-1"></div>
+                    </div>
+                    
+                    <!-- Prompt Quality Indicator -->
+                    <div id="promptQuality" class="mt-2 hidden">
+                        <div class="flex items-center space-x-2">
+                            <div id="qualityBar" class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="qualityFill" class="h-full bg-red-400 transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <span id="qualityText" class="text-xs text-gray-600">Prompt Quality</span>
+                        </div>
+                        <div id="qualityTips" class="text-xs text-gray-500 mt-1"></div>
+                    </div>
                 </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="content_type" class="block text-sm font-medium text-gray-700 mb-2">
+                            Content Type
+                        </label>
+                        <select id="content_type" name="content_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="blog">📝 Blog Post</option>
+                            <option value="social">📱 Social Media Post</option>
+                            <option value="thread">🧵 Twitter Thread</option>
+                            <option value="article">📄 LinkedIn Article</option>
+                        </select>
+                    </div>
 
-                <div>
-                    <label for="content_type" class="block text-sm font-medium text-gray-700 mb-2">
-                        Content Type
-                    </label>
-                    <select id="content_type" name="content_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="blog">Blog Post</option>
-                        <option value="social">Social Media Post</option>
-                        <option value="thread">Twitter Thread</option>
-                        <option value="article">LinkedIn Article</option>
-                    </select>
+                    <div>
+                        <label for="platform" class="block text-sm font-medium text-gray-700 mb-2">
+                            Target Platform
+                        </label>
+                        <select id="platform" name="platform" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="general">🌐 General</option>
+                            <option value="twitter">🐦 Twitter/X</option>
+                            <option value="linkedin">💼 LinkedIn</option>
+                            <option value="facebook">📘 Facebook</option>
+                            <option value="instagram">📷 Instagram</option>
+                            <option value="blog">📄 Blog</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <label for="platform" class="block text-sm font-medium text-gray-700 mb-2">
-                    Target Platform
-                </label>
-                <select id="platform" name="platform" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="general">General</option>
-                    <option value="twitter">Twitter/X</option>
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="blog">Blog</option>
-                </select>
+            <!-- Professional Content Options -->
+            <div class="border-t pt-6">
+                <h3 class="text-md font-semibold text-gray-900 mb-4">🎨 Content Customization</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Writing Style -->
+                    <div>
+                        <label for="writing_style" class="block text-sm font-medium text-gray-700 mb-2">
+                            Writing Style
+                        </label>
+                        <select id="writing_style" name="writing_style" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="informative">📚 Informative</option>
+                            <option value="conversational">💬 Conversational</option>
+                            <option value="persuasive">🎯 Persuasive</option>
+                            <option value="narrative">📖 Narrative/Story</option>
+                            <option value="descriptive">🔍 Descriptive</option>
+                            <option value="analytical">📊 Analytical</option>
+                            <option value="inspirational">⭐ Inspirational</option>
+                            <option value="educational">🎓 Educational</option>
+                        </select>
+                    </div>
+
+                    <!-- Target Audience -->
+                    <div>
+                        <label for="target_audience" class="block text-sm font-medium text-gray-700 mb-2">
+                            Target Audience
+                        </label>
+                        <select id="target_audience" name="target_audience" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="startup_founders">🚀 Startup Founders</option>
+                            <option value="entrepreneurs">💼 Entrepreneurs</option>
+                            <option value="business_professionals">👔 Business Professionals</option>
+                            <option value="investors">💰 Investors</option>
+                            <option value="developers">💻 Developers</option>
+                            <option value="industry_experts">🎯 Industry Experts</option>
+                            <option value="customers">👥 Customers</option>
+                            <option value="general_public">🌍 General Public</option>
+                        </select>
+                    </div>
+
+                    <!-- Content Tone -->
+                    <div>
+                        <label for="content_tone" class="block text-sm font-medium text-gray-700 mb-2">
+                            Content Tone
+                        </label>
+                        <select id="content_tone" name="content_tone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="professional">🎩 Professional</option>
+                            <option value="friendly">😊 Friendly</option>
+                            <option value="authoritative">⚡ Authoritative</option>
+                            <option value="casual">😎 Casual</option>
+                            <option value="formal">🎭 Formal</option>
+                            <option value="enthusiastic">🔥 Enthusiastic</option>
+                            <option value="thoughtful">🤔 Thoughtful</option>
+                            <option value="confident">💪 Confident</option>
+                        </select>
+                    </div>
+
+                    <!-- Content Purpose -->
+                    <div>
+                        <label for="content_purpose" class="block text-sm font-medium text-gray-700 mb-2">
+                            Content Purpose
+                        </label>
+                        <select id="content_purpose" name="content_purpose" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="educate">🎓 Educate</option>
+                            <option value="engage">� Engage</option>
+                            <option value="inspire">✨ Inspire</option>
+                            <option value="inform">📢 Inform</option>
+                            <option value="build_authority">🏆 Build Authority</option>
+                            <option value="drive_traffic">📈 Drive Traffic</option>
+                            <option value="sell">💵 Sell/Convert</option>
+                            <option value="entertain">🎉 Entertain</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Options -->
+            <div class="border-t pt-6">
+                <details class="group">
+                    <summary class="cursor-pointer text-md font-semibold text-gray-900 mb-4 flex items-center">
+                        <span class="mr-2">⚙️ Advanced Options</span>
+                        <svg class="w-4 h-4 transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </summary>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div>
+                            <label for="content_length" class="block text-sm font-medium text-gray-700 mb-2">
+                                Content Length
+                            </label>
+                            <select id="content_length" name="content_length" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="short">📝 Short (Quick read)</option>
+                                <option value="medium">📄 Medium (Standard)</option>
+                                <option value="long">📚 Long (In-depth)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="include_data" class="block text-sm font-medium text-gray-700 mb-2">
+                                Include Data/Stats
+                            </label>
+                            <select id="include_data" name="include_data" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="false">❌ No</option>
+                                <option value="true">📊 Yes</option>
+                            </select>
+                        </div>
+
+                        <div id="thread_length_container" class="hidden">
+                            <label for="thread_length" class="block text-sm font-medium text-gray-700 mb-2">
+                                Thread Length
+                            </label>
+                            <select id="thread_length" name="thread_length" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="3">3 tweets</option>
+                                <option value="5">5 tweets</option>
+                                <option value="7">7 tweets</option>
+                                <option value="10">10 tweets</option>
+                            </select>
+                        </div>
+                    </div>
+                </details>
             </div>
 
             <div class="flex items-center justify-between pt-4">
                 <div class="text-sm text-gray-600">
-                    <p>💡 The AI will generate content tailored to your startup's brand voice and target audience.</p>
+                    <p>🤖 Powered by advanced AI with professional content strategies</p>
+                    <p class="text-xs text-gray-500 mt-1">Content optimized for engagement and business results</p>
                 </div>
-                <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                    Generate Content
+                <button type="submit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 font-semibold">
+                    ✨ Generate Professional Content
                 </button>
             </div>
         </form>
@@ -254,11 +406,165 @@
     </div>
 </div>
 
+<!-- Prompt Tips Modal -->
+<div id="promptTipsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">💡 How to Write Effective Content Prompts</h3>
+                <button onclick="closePromptTips()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Modal Content -->
+            <div class="py-4 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Good Examples -->
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <h4 class="font-semibold text-green-800 mb-3 flex items-center">
+                            ✅ Excellent Prompts
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <div class="font-medium text-green-700">Specific + Value:</div>
+                                <div class="text-green-600 italic">"The 5 AI tools that increased our startup's productivity by 200% in 2024"</div>
+                            </div>
+                            <div>
+                                <div class="font-medium text-green-700">Personal Story + Lesson:</div>
+                                <div class="text-green-600 italic">"How I raised $2M for my SaaS startup without a single pitch deck"</div>
+                            </div>
+                            <div>
+                                <div class="font-medium text-green-700">Controversial + Data:</div>
+                                <div class="text-green-600 italic">"Why 90% of startup accelerators are wasting founders' time (and what to do instead)"</div>
+                            </div>
+                            <div>
+                                <div class="font-medium text-green-700">Problem + Solution:</div>
+                                <div class="text-green-600 italic">"Our customer acquisition cost was $500. Here's how we reduced it to $50"</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bad Examples -->
+                    <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                        <h4 class="font-semibold text-red-800 mb-3 flex items-center">
+                            ❌ Weak Prompts
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <div class="font-medium text-red-700">Too vague:</div>
+                                <div class="text-red-600 italic">"AI tips for startups"</div>
+                                <div class="text-xs text-red-500">→ No specific value or outcome</div>
+                            </div>
+                            <div>
+                                <div class="font-medium text-red-700">Generic advice:</div>
+                                <div class="text-red-600 italic">"How to be successful"</div>
+                                <div class="text-xs text-red-500">→ Too broad, no actionable insights</div>
+                            </div>
+                            <div>
+                                <div class="font-medium text-red-700">No context:</div>
+                                <div class="text-red-600 italic">"Our product launch"</div>
+                                <div class="text-xs text-red-500">→ No hook or specific angle</div>
+                            </div>
+                            <div>
+                                <div class="font-medium text-red-700">Self-promotional:</div>
+                                <div class="text-red-600 italic">"Why our startup is amazing"</div>
+                                <div class="text-xs text-red-500">→ No value for audience</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pro Tips -->
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h4 class="font-semibold text-blue-800 mb-3">🚀 Pro Tips for Maximum Engagement</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="font-medium text-blue-700 mb-2">📊 Include Numbers & Data:</div>
+                            <ul class="space-y-1 text-blue-600">
+                                <li>• "3 mistakes that cost us $100K"</li>
+                                <li>• "From 0 to 10K users in 6 months"</li>
+                                <li>• "5 metrics every founder should track"</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <div class="font-medium text-blue-700 mb-2">🎯 Target Specific Pain Points:</div>
+                            <ul class="space-y-1 text-blue-600">
+                                <li>• "Struggling with user retention?"</li>
+                                <li>• "Can't find product-market fit?"</li>
+                                <li>• "Tired of rejected investor pitches?"</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <div class="font-medium text-blue-700 mb-2">📖 Share Personal Stories:</div>
+                            <ul class="space-y-1 text-blue-600">
+                                <li>• "The day we almost shut down"</li>
+                                <li>• "My biggest hiring mistake"</li>
+                                <li>• "When our server crashed on launch day"</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <div class="font-medium text-blue-700 mb-2">💡 Offer Actionable Insights:</div>
+                            <ul class="space-y-1 text-blue-600">
+                                <li>• "Step-by-step guide to..."</li>
+                                <li>• "The exact framework we used"</li>
+                                <li>• "Copy this strategy for your startup"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formula -->
+                <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <h4 class="font-semibold text-purple-800 mb-3">🎨 Content Formula for Maximum Impact</h4>
+                    <div class="text-sm space-y-2">
+                        <div class="font-mono bg-white p-3 rounded border">
+                            <span class="text-purple-600">[Specific Outcome/Number]</span> + 
+                            <span class="text-blue-600">[Personal Experience/Story]</span> + 
+                            <span class="text-green-600">[Actionable Value]</span>
+                        </div>
+                        <div class="text-xs text-purple-600 space-y-1">
+                            <div><strong>Example:</strong> "How I grew my SaaS from $0 to $50K MRR in 8 months (and the 3 strategies that made the difference)"</div>
+                            <div><strong>Breakdown:</strong> <span class="text-purple-500">Specific outcome ($50K MRR in 8 months)</span> + <span class="text-blue-500">Personal experience (I grew my SaaS)</span> + <span class="text-green-500">Actionable value (3 strategies)</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-center pt-4 border-t">
+                <button onclick="closePromptTips()" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    Got it! Let's Create Amazing Content 🚀
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle content type changes to show/hide thread options
+    const contentTypeSelect = document.getElementById('content_type');
+    const threadLengthContainer = document.getElementById('thread_length_container');
+    
+    function toggleThreadOptions() {
+        if (contentTypeSelect.value === 'thread') {
+            threadLengthContainer.classList.remove('hidden');
+        } else {
+            threadLengthContainer.classList.add('hidden');
+        }
+    }
+    
+    contentTypeSelect.addEventListener('change', toggleThreadOptions);
+    toggleThreadOptions(); // Initial state
+    
     const createForm = document.getElementById('createForm');
     const contentResult = document.getElementById('contentResult');
     const contentDisplay = document.getElementById('contentDisplay');
@@ -271,7 +577,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             const formData = new FormData(createForm);
-            const response = await fetch(createForm.action, {
+            
+            // Check if we should use advanced generation
+            const hasAdvancedOptions = formData.get('writing_style') || formData.get('target_audience');
+            const endpoint = hasAdvancedOptions ? '/create/generate-advanced' : '/create/generate';
+            
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData
             });
@@ -282,8 +593,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 console.log('About to call displayContent with result:', result);
-                displayContent(result);
-                showNotification('Content generated successfully!', 'success');
+                if (hasAdvancedOptions && result.metadata) {
+                    displayAdvancedContent(result);
+                } else {
+                    displayContent(result);
+                }
+                showNotification('Professional content generated successfully!', 'success');
             } else {
                 showNotification(result.detail || 'Failed to generate content', 'error');
             }
@@ -351,6 +666,176 @@ function displayContent(content) {
     
     contentDisplay.innerHTML = html;
     contentResult.classList.remove('hidden');
+}
+
+function displayAdvancedContent(result) {
+    console.log('displayAdvancedContent called with:', result);
+    
+    const contentResult = document.getElementById('contentResult');
+    const contentDisplay = document.getElementById('contentDisplay');
+    
+    // Store the current content for save/publish operations
+    window.currentContent = result;
+    
+    const content = result.content || 'No content available';
+    const metadata = result.metadata || {};
+    const wordCount = result.word_count || 0;
+    const characterCount = result.character_count || 0;
+    const readTime = result.estimated_read_time || 0;
+    const engagementScore = result.engagement_score || 0;
+    const suggestions = result.suggestions || [];
+    
+    let html = `
+        <div class="border border-gray-200 rounded-lg p-6 bg-gradient-to-r from-blue-50 to-purple-50">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-gray-900 text-lg">📝 ${metadata.topic || 'Generated Content'}</h3>
+                <div class="flex space-x-2">
+                    <span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-semibold">
+                        ${metadata.platform || 'General'}
+                    </span>
+                    <span class="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800 font-semibold">
+                        ${metadata.content_type || 'Content'}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Content Analytics Dashboard -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-white rounded-lg border">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">${wordCount}</div>
+                    <div class="text-xs text-gray-500">Words</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">${characterCount}</div>
+                    <div class="text-xs text-gray-500">Characters</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">${readTime}s</div>
+                    <div class="text-xs text-gray-500">Read Time</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-orange-600">${engagementScore}</div>
+                    <div class="text-xs text-gray-500">Engagement Score</div>
+                </div>
+            </div>
+            
+            <!-- Generated Content with Editable Preview -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold text-gray-900 flex items-center">
+                        📝 Generated Content
+                    </h4>
+                    <div class="flex space-x-2">
+                        <button onclick="toggleEditMode()" id="editToggle" class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors">
+                            ✏️ Edit Content
+                        </button>
+                        <button onclick="checkPlaceholders()" class="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200 transition-colors">
+                            🔍 Check Placeholders
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Read-only view -->
+                <div id="contentPreview" class="prose max-w-none">
+                    <div class="whitespace-pre-wrap text-gray-700 p-4 bg-white rounded-lg border shadow-sm" id="modalContentDisplay">${content.replace(/\n/g, '<br>')}</div>
+                </div>
+                
+                <!-- Editable view -->
+                <div id="contentEditor" class="hidden">
+                    <textarea id="contentTextarea" class="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical" placeholder="Edit your content here...">${content}</textarea>
+                    <div class="flex justify-between items-center mt-3">
+                        <div class="text-sm text-gray-600">
+                            <span id="charCount">${content.length}</span> characters
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="saveEdit()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                💾 Save Changes
+                            </button>
+                            <button onclick="cancelEdit()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                            <button onclick="cancelEdit()" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
+                                Cancel
+                            </button>
+                            <button onclick="saveEdit()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Placeholder Detection Alert -->
+                <div id="placeholderAlert" class="hidden mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Placeholders Detected</h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <p>Found placeholders that need to be replaced before publishing:</p>
+                                <ul id="placeholderList" class="list-disc list-inside mt-1"></ul>
+                                <p class="mt-2">Please edit the content to replace these placeholders with actual information.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Metadata -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="p-4 bg-white rounded-lg border">
+                    <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                        🎯 Content Strategy
+                    </h4>
+                    <div class="space-y-2 text-sm">
+                        <div><strong>Style:</strong> <span class="text-blue-600">${metadata.writing_style?.replace('_', ' ') || 'Standard'}</span></div>
+                        <div><strong>Audience:</strong> <span class="text-green-600">${metadata.target_audience?.replace('_', ' ') || 'General'}</span></div>
+                        <div><strong>Tone:</strong> <span class="text-purple-600">${metadata.content_tone || 'Professional'}</span></div>
+                        <div><strong>Purpose:</strong> <span class="text-orange-600">${metadata.content_purpose?.replace('_', ' ') || 'Inform'}</span></div>
+                    </div>
+                </div>
+                
+                ${suggestions.length > 0 ? `
+                <div class="p-4 bg-white rounded-lg border">
+                    <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                        💡 Improvement Suggestions
+                    </h4>
+                    <ul class="space-y-1 text-sm">
+                        ${suggestions.map(suggestion => `<li class="flex items-start"><span class="text-yellow-500 mr-2">•</span>${suggestion}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-3">
+                <button onclick="showImageUploadModal()" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 font-semibold flex items-center">
+                    📸 Add Images & Publish
+                </button>
+                <button onclick="publishContent(['blog'])" class="bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-teal-700 transition-all transform hover:scale-105 font-semibold flex items-center">
+                    📝 Publish to Blog
+                </button>
+                <button onclick="copyContent()" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-all font-semibold flex items-center">
+                    📋 Copy Content
+                </button>
+                <button onclick="saveContent()" class="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 transition-all font-semibold flex items-center">
+                    💾 Save Draft
+                </button>
+            </div>
+        </div>
+    `;
+    
+    contentResult.classList.remove('hidden');
+    contentDisplay.innerHTML = html;
+    
+    // Auto-check for placeholders after content is displayed
+    autoCheckPlaceholders();
 }
 
 function useTemplate(template) {
@@ -670,5 +1155,416 @@ async function publishWithImages() {
         document.getElementById('publishButton').textContent = '🚀 Publish Now';
     }
 }
+
+// Prompt guidance functions
+function showPromptTips() {
+    document.getElementById('promptTipsModal').classList.remove('hidden');
+}
+
+function closePromptTips() {
+    document.getElementById('promptTipsModal').classList.add('hidden');
+}
+
+function generateSamplePrompt() {
+    const platform = document.getElementById('platform').value;
+    const contentType = document.getElementById('content_type').value;
+    const audience = document.getElementById('target_audience').value;
+    
+    const samplePrompts = {
+        'facebook': [
+            "How we went from 0 to 10,000 users in 3 months (and the 4 growth hacks that made it possible)",
+            "The biggest mistake we made in our first year that cost us $50K (and how you can avoid it)",
+            "Why I turned down a $2M acquisition offer and what happened next",
+            "5 productivity tools that doubled our team's output without hiring anyone new",
+            "The customer feedback that completely changed our product roadmap"
+        ],
+        'linkedin': [
+            "The hiring strategy that helped us build a world-class team with zero budget for recruiters",
+            "3 lessons from scaling our startup from 2 to 50 employees in 18 months",
+            "Why traditional marketing didn't work for our B2B SaaS (and what we did instead)",
+            "The pivot that saved our startup: How we found product-market fit after 2 failed attempts",
+            "Building in public: How transparency increased our revenue by 300%"
+        ],
+        'twitter': [
+            "The 10-minute daily habit that 10x'd my productivity as a founder",
+            "Why we fired our highest-performing salesperson (thread)",
+            "4 red flags that your startup idea won't work",
+            "The cold email template that got us 50% response rates",
+            "What I wish I knew before raising my first round"
+        ]
+    };
+    
+    const platformPrompts = samplePrompts[platform] || samplePrompts['facebook'];
+    const randomPrompt = platformPrompts[Math.floor(Math.random() * platformPrompts.length)];
+    
+    document.getElementById('topic').value = randomPrompt;
+    analyzePromptQuality();
+    showNotification('🎲 Random example added! Feel free to customize it.', 'info');
+}
+
+// Initialize prompt quality analysis
+document.addEventListener('DOMContentLoaded', function() {
+    const topicInput = document.getElementById('topic');
+    const platformSelect = document.getElementById('platform');
+    const audienceSelect = document.getElementById('target_audience');
+    
+    // Show prompt guidance when user starts typing
+    topicInput.addEventListener('input', function() {
+        analyzePromptQuality();
+        updatePromptSuggestions();
+    });
+    
+    // Update suggestions when platform or audience changes
+    platformSelect.addEventListener('change', updatePromptSuggestions);
+    audienceSelect.addEventListener('change', updatePromptSuggestions);
+    
+    // Initial setup
+    updatePromptSuggestions();
+});
+
+function analyzePromptQuality() {
+    const topic = document.getElementById('topic').value;
+    const qualityContainer = document.getElementById('promptQuality');
+    const qualityFill = document.getElementById('qualityFill');
+    const qualityText = document.getElementById('qualityText');
+    const qualityTips = document.getElementById('qualityTips');
+    
+    if (!topic.trim()) {
+        qualityContainer.classList.add('hidden');
+        return;
+    }
+    
+    qualityContainer.classList.remove('hidden');
+    
+    let score = 0;
+    const tips = [];
+    
+    // Check for numbers/data
+    if (/\d+/.test(topic)) {
+        score += 25;
+    } else {
+        tips.push("Add specific numbers or data");
+    }
+    
+    // Check for specific outcomes/results
+    if (/\b(how|increase|reduce|grow|build|create|achieve)\b/i.test(topic)) {
+        score += 20;
+    } else {
+        tips.push("Include specific outcomes or actions");
+    }
+    
+    // Check length (sweet spot: 50-120 characters)
+    if (topic.length >= 50 && topic.length <= 120) {
+        score += 20;
+    } else if (topic.length < 50) {
+        tips.push("Make it more specific (aim for 50+ characters)");
+    } else {
+        tips.push("Consider shortening for better engagement");
+    }
+    
+    // Check for questions or curiosity gaps
+    if (/\?|\bwhy\b|\bhow\b|\bwhat\b/i.test(topic)) {
+        score += 15;
+    } else {
+        tips.push("Add curiosity elements (why, how, what)");
+    }
+    
+    // Check for value proposition
+    if (/\b(secret|strategy|tip|hack|method|way|guide)\b/i.test(topic)) {
+        score += 10;
+    } else {
+        tips.push("Highlight the value or learning");
+    }
+    
+    // Check for personal elements
+    if (/\b(I|we|our|my)\b/i.test(topic)) {
+        score += 10;
+    } else {
+        tips.push("Add personal experience for authenticity");
+    }
+    
+    // Update UI
+    qualityFill.style.width = `${score}%`;
+    
+    if (score >= 80) {
+        qualityFill.className = 'h-full bg-green-400 transition-all duration-300';
+        qualityText.textContent = 'Excellent Prompt!';
+        qualityText.className = 'text-xs text-green-600 font-semibold';
+        qualityTips.textContent = '🎉 This prompt should generate high-quality, engaging content!';
+    } else if (score >= 60) {
+        qualityFill.className = 'h-full bg-yellow-400 transition-all duration-300';
+        qualityText.textContent = 'Good Prompt';
+        qualityText.className = 'text-xs text-yellow-600 font-semibold';
+        qualityTips.textContent = tips.length ? `💡 To improve: ${tips.slice(0, 2).join(', ')}` : '';
+    } else {
+        qualityFill.className = 'h-full bg-red-400 transition-all duration-300';
+        qualityText.textContent = 'Needs Improvement';
+        qualityText.className = 'text-xs text-red-600 font-semibold';
+        qualityTips.textContent = tips.length ? `🔧 Try: ${tips.slice(0, 2).join(', ')}` : '';
+    }
+}
+
+function updatePromptSuggestions() {
+    const platform = document.getElementById('platform').value;
+    const audience = document.getElementById('target_audience').value;
+    const suggestionsContainer = document.getElementById('promptSuggestions');
+    const suggestionButtons = document.getElementById('suggestionButtons');
+    
+    const suggestions = {
+        'facebook': {
+            'startup_founders': ['Share your biggest mistake', 'Growth hack that worked', 'Lesson from failure', 'Behind-the-scenes story'],
+            'investors': ['Market insights', 'Investment thesis', 'Due diligence tips', 'Portfolio company story'],
+            'developers': ['Technical challenge solved', 'Tool that saves time', 'Code optimization tip', 'Architecture decision']
+        },
+        'linkedin': {
+            'business_professionals': ['Leadership lesson', 'Career growth strategy', 'Industry insight', 'Professional development'],
+            'startup_founders': ['Scaling challenge', 'Team building tip', 'Business strategy', 'Fundraising experience'],
+            'entrepreneurs': ['Business model insight', 'Market validation', 'Customer discovery', 'Pivot story']
+        },
+        'twitter': {
+            'startup_founders': ['Quick tip thread', 'Controversial opinion', 'Daily habit', 'Tool recommendation'],
+            'developers': ['Code snippet', 'Tech opinion', 'Learning resource', 'Development tip'],
+            'general_public': ['Life lesson', 'Interesting fact', 'Hot take', 'Personal story']
+        }
+    };
+    
+    const platformSuggestions = suggestions[platform] || suggestions['facebook'];
+    const audienceSuggestions = platformSuggestions[audience] || platformSuggestions['startup_founders'] || ['Personal story', 'Lesson learned', 'Industry insight', 'Practical tip'];
+    
+    suggestionButtons.innerHTML = '';
+    audienceSuggestions.forEach(suggestion => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded cursor-pointer transition-colors';
+        button.textContent = suggestion;
+        button.onclick = () => {
+            const currentTopic = document.getElementById('topic').value;
+            if (!currentTopic.trim()) {
+                document.getElementById('topic').placeholder = `💡 Example: How ${suggestion.toLowerCase()} changed our startup's trajectory`;
+                showNotification(`💡 Try writing about: ${suggestion}`, 'info');
+            }
+        };
+        suggestionButtons.appendChild(button);
+    });
+    
+    suggestionsContainer.classList.remove('hidden');
+}
+
+// Content Editing and Placeholder Management Functions
+let isEditing = false;
+let originalContent = '';
+
+function toggleEditMode() {
+    const preview = document.getElementById('contentPreview');
+    const editor = document.getElementById('contentEditor');
+    const toggle = document.getElementById('editToggle');
+    const textarea = document.getElementById('contentTextarea');
+    
+    if (!isEditing) {
+        // Switch to edit mode
+        // Get the original content from our stored data, not from DOM
+        originalContent = window.currentContent ? window.currentContent.content : '';
+        
+        // If no stored content, extract from display
+        if (!originalContent) {
+            const contentDisplay = document.getElementById('contentDisplay');
+            originalContent = contentDisplay.innerHTML
+                .replace(/<br\s*\/?>/gi, '\n')  // Convert <br> tags to newlines
+                .replace(/<\/div><div>/gi, '\n') // Convert div breaks to newlines
+                .replace(/<[^>]+>/g, '')         // Remove any remaining HTML tags
+                .trim();
+        }
+        
+        textarea.value = originalContent;
+        
+        preview.classList.add('hidden');
+        editor.classList.remove('hidden');
+        toggle.textContent = '👁️ Preview Mode';
+        toggle.className = 'px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors';
+        isEditing = true;
+        
+        // Update character count
+        updateCharCount();
+        
+        // Add event listener for character count
+        textarea.addEventListener('input', updateCharCount);
+        
+        // Focus on textarea
+        textarea.focus();
+        
+        showNotification('Now editing content. Use the buttons below to save or cancel.', 'info');
+    } else {
+        // Switch to preview mode
+        preview.classList.remove('hidden');
+        editor.classList.add('hidden');
+        toggle.textContent = '✏️ Edit Content';
+        toggle.className = 'px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors';
+        isEditing = false;
+    }
+}
+
+function updateCharCount() {
+    const textarea = document.getElementById('contentTextarea');
+    const charCount = document.getElementById('charCount');
+    charCount.textContent = textarea.value.length;
+}
+
+function saveEdit() {
+    const textarea = document.getElementById('contentTextarea');
+    const contentDisplay = document.getElementById('contentDisplay');
+    const newContent = textarea.value.trim();
+    
+    if (!newContent) {
+        showNotification('Content cannot be empty!', 'error');
+        return;
+    }
+    
+    // Find the content text element within the contentDisplay structure
+    const contentTextElement = contentDisplay.querySelector('.whitespace-pre-wrap.text-gray-700');
+    
+    if (contentTextElement) {
+        // Update only the content text, preserving the structure
+        contentTextElement.innerHTML = newContent
+            .replace(/\n/g, '<br>')
+            .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+    } else {
+        // Fallback: if structure is not found, regenerate the entire content
+        console.warn('Content text element not found, regenerating content display');
+        if (window.currentContent) {
+            window.currentContent.content = newContent;
+            displayContent(window.currentContent);
+        }
+    }
+    
+    // Update stored content
+    if (window.currentContent) {
+        window.currentContent.content = newContent;
+    }
+    
+    // Update analytics without regenerating the entire UI
+    updateAnalyticsOnly(newContent);
+    
+    toggleEditMode();
+    showNotification('Content updated successfully!', 'success');
+    
+    // Auto-check for placeholders after edit
+    setTimeout(checkPlaceholders, 500);
+}
+
+function updateAnalyticsOnly(content) {
+    // Update only the analytics numbers without affecting the UI structure
+    const words = content.split(/\s+/).filter(word => word.length > 0).length;
+    const characters = content.length;
+    const readTime = Math.max(1, Math.round(words / 200 * 60)); // 200 words per minute
+    
+    // Update the analytics display
+    const analyticsElements = document.querySelectorAll('.text-2xl.font-bold');
+    if (analyticsElements.length >= 4) {
+        analyticsElements[0].textContent = words; // Word count
+        analyticsElements[1].textContent = characters; // Character count
+        analyticsElements[2].textContent = readTime + 's'; // Read time
+        // Keep engagement score as is for now
+    }
+    
+    // Update stored analytics
+    if (window.currentContent) {
+        window.currentContent.word_count = words;
+        window.currentContent.character_count = characters;
+        window.currentContent.estimated_read_time = readTime;
+    }
+}
+
+function cancelEdit() {
+    const textarea = document.getElementById('contentTextarea');
+    textarea.value = originalContent;
+    toggleEditMode();
+    showNotification('Edit cancelled', 'info');
+}
+
+function checkPlaceholders() {
+    let content;
+    
+    if (isEditing) {
+        content = document.getElementById('contentTextarea').value;
+    } else {
+        // Get the actual content from our stored data, not from DOM
+        content = window.currentContent ? window.currentContent.content : '';
+        if (!content) {
+            // Fallback to extracting from DOM if needed
+            const contentDisplay = document.getElementById('contentDisplay');
+            content = contentDisplay.innerHTML
+                .replace(/<br\s*\/?>/gi, '\n')  // Convert <br> tags to newlines
+                .replace(/<\/div><div>/gi, '\n') // Convert div breaks to newlines
+                .replace(/<[^>]+>/g, '')         // Remove any remaining HTML tags
+                .trim();
+        }
+    }
+    
+    // Common placeholder patterns
+    const placeholderPatterns = [
+        /\[.*?\]/g,           // [Link to blog post], [Your Name]
+        /\{.*?\}/g,           // {Company Name}, {Product}
+        /\bCompany Name\b/g,  // Company Name
+        /\bYour Startup Name\b/g, // Your Startup Name
+        /\bProduct Name\b/g,  // Product Name
+        /\byour-\w+/g,        // your-website, your-product
+        /\bYour \w+/g,        // Your Startup, Your Product
+        /\bexample\.com\b/g,  // example.com
+        /\bhttps?:\/\/example/g, // http://example
+        /\bhttps:\/\/yourstartup\.com\b/g, // Generic startup URL
+        /\[link to .+?\]/gi   // [link to anything]
+    ];
+    
+    const foundPlaceholders = new Set();
+    
+    placeholderPatterns.forEach(pattern => {
+        const matches = content.match(pattern);
+        if (matches) {
+            matches.forEach(match => foundPlaceholders.add(match));
+        }
+    });
+    
+    const alertDiv = document.getElementById('placeholderAlert');
+    const placeholderList = document.getElementById('placeholderList');
+    
+    if (foundPlaceholders.size > 0) {
+        placeholderList.innerHTML = '';
+        foundPlaceholders.forEach(placeholder => {
+            const li = document.createElement('li');
+            li.textContent = `"${placeholder}"`;
+            li.className = 'text-yellow-700 font-mono text-sm';
+            placeholderList.appendChild(li);
+        });
+        
+        alertDiv.classList.remove('hidden');
+        showNotification(`Found ${foundPlaceholders.size} placeholder(s) that need attention`, 'warning');
+    } else {
+        alertDiv.classList.add('hidden');
+        showNotification('✅ No placeholders found - content is ready to publish!', 'success');
+    }
+    
+    return foundPlaceholders.size === 0;
+}
+
+// Auto-check placeholders when content is first displayed
+function autoCheckPlaceholders() {
+    setTimeout(() => {
+        checkPlaceholders();
+    }, 1000);
+}
+
+// Enhanced publishWithImages function to check placeholders
+const originalPublishWithImages = window.publishWithImages;
+window.publishWithImages = function() {
+    if (!checkPlaceholders()) {
+        if (confirm('⚠️ Placeholders detected in your content. Do you want to publish anyway?')) {
+            originalPublishWithImages();
+        } else {
+            showNotification('Please edit the content to replace placeholders first', 'warning');
+        }
+    } else {
+        originalPublishWithImages();
+    }
+};
 </script>
 {% endblock %} 

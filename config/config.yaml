@@ -14,11 +14,15 @@ ai:
     api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
     endpoint: https://ai-founder-3699.openai.azure.com/openai/deployments/gpt-4o
     temperature: 0.7
+  gemini:
+    api_key: AIzaSyCmbCRGsCfd_xJxKoiEouyeTYSIi6WppzE
+    model: gemini-1.5-flash
+    temperature: 0.7
   openai:
     api_key: A02OOjVTyTDPX0UFljXCRWNEazqTF5Sdq5hlXV3CN2eVD1ljSHWwJQQJ99ALAC5RqLJXJ3w3AAAAACOGfOHQ
     model: gpt-4-turbo-preview
     temperature: 0.7
-  provider: gpt4o
+  provider: gemini
 analytics:
   google_analytics:
     credentials_file: path/to/credentials.json

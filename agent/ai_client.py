@@ -21,6 +21,15 @@ except ImportError:
     AzureKeyCredential = None
     AZURE_AI_AVAILABLE = False
 
+# Try to import Google Generative AI for Gemini
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    print("⚠️  Google Generative AI not available - Gemini features will be disabled")
+    genai = None
+    GEMINI_AVAILABLE = False
+
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -46,6 +55,8 @@ class AIClient:
             self._init_deepseek_r1_client(config)
         elif self.provider == 'gpt4o':
             self._init_gpt4o_client(config)
+        elif self.provider == 'gemini':
+            self._init_gemini_client(config)
         else:
             raise ValueError(f"Unsupported AI provider: {self.provider}")
         
@@ -119,6 +130,32 @@ class AIClient:
         self.model = "gpt-4o"  # Fixed model name for GPT-4o
         self.temperature = gpt4o_config.get('temperature', 0.7)
     
+    def _init_gemini_client(self, config: Dict):
+        """Initialize Gemini client"""
+        if not GEMINI_AVAILABLE:
+            raise ValueError("Google Generative AI not available - cannot use Gemini provider")
+            
+        gemini_config = config.get('gemini', {})
+        api_key = gemini_config.get('api_key')
+        
+        if not api_key:
+            raise ValueError("Gemini API key not provided")
+        
+        genai.configure(api_key=api_key)
+        self.model = gemini_config.get('model', 'gemini-1.5-flash')
+        self.temperature = gemini_config.get('temperature', 0.7)
+        
+        # Initialize the model
+        self.client = genai.GenerativeModel(
+            model_name=self.model,
+            generation_config=genai.types.GenerationConfig(
+                temperature=self.temperature,
+                max_output_tokens=4000,
+            )
+        )
+        
+        logger.info(f"Initialized Gemini client with model: {self.model}")
+    
     async def generate_text(self, prompt: str, max_tokens: int = 2000) -> str:
         """
         Generate text using the configured AI provider
@@ -139,6 +176,8 @@ class AIClient:
                 return await self._generate_deepseek_r1_text(prompt, max_tokens)
             elif self.provider == 'gpt4o':
                 return await self._generate_gpt4o_text(prompt, max_tokens)
+            elif self.provider == 'gemini':
+                return await self._generate_gemini_text(prompt, max_tokens)
             else:
                 raise ValueError(f"Unsupported provider: {self.provider}")
                 
@@ -248,6 +287,30 @@ class AIClient:
             
         except Exception as e:
             logger.error(f"GPT-4o API error: {e}")
+            raise
+    
+    async def _generate_gemini_text(self, prompt: str, max_tokens: int) -> str:
+        """Generate text using Gemini"""
+        try:
+            # Add system message to the prompt for Gemini
+            full_prompt = f"""You are a professional content creator and strategist for startups. Always write in plain text without markdown formatting like **bold** or *italic*. Use natural language emphasis only.
+
+{prompt}"""
+            
+            response = await asyncio.get_event_loop().run_in_executor(
+                None, 
+                lambda: self.client.generate_content(full_prompt)
+            )
+            
+            if response and response.text:
+                content = response.text.strip()
+                logger.info(f"Successfully generated {len(content)} characters with Gemini")
+                return content
+            else:
+                raise ValueError("Empty response content from Gemini")
+            
+        except Exception as e:
+            logger.error(f"Gemini API error: {e}")
             raise
     
     async def generate_blog_post(self, topic: str, startup_info: Dict, 
