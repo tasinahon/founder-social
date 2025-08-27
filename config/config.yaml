@@ -137,7 +137,7 @@ social_media:
     app_id: 1937644817012952
     app_secret: 6753b4e4cb87066014d9ec1cd7bb34f3
     auto_post: true
-    enabled: true
+    enabled: false
     page_id: '564794600044137'
     token_expires: '2025-10-06'
   instagram:

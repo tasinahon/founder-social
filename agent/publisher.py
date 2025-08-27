@@ -38,16 +38,67 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# Import the new Facebook token manager
+try:
+    from agent.facebook_token_manager import validate_facebook_credentials, auto_token_manager
+    FACEBOOK_TOKEN_MANAGER_AVAILABLE = True
+except ImportError:
+    FACEBOOK_TOKEN_MANAGER_AVAILABLE = False
+    logger.warning("Facebook token manager not available")
+
+class PublishingError(Exception):
+    """Custom exception for publishing errors"""
+    def __init__(self, platform: str, message: str, error_type: str = "generic"):
+        self.platform = platform
+        self.message = message
+        self.error_type = error_type
+        super().__init__(f"{platform}: {message}")
+
+class CredentialsError(PublishingError):
+    """Exception for missing or invalid credentials"""
+    def __init__(self, platform: str, missing_fields: list = None):
+        missing_fields = missing_fields or []
+        if missing_fields:
+            message = f"Missing credentials: {', '.join(missing_fields)}. Please configure your {platform} credentials in Settings."
+        else:
+            message = f"Platform not configured. Please set up your {platform} credentials in Settings."
+        super().__init__(platform, message, "credentials")
+        self.missing_fields = missing_fields
+
+class PlatformDisabledError(PublishingError):
+    """Exception for disabled platforms"""
+    def __init__(self, platform: str):
+        message = f"Publishing is disabled. Please enable {platform} publishing in Settings."
+        super().__init__(platform, message, "disabled")
+
 class Publisher:
     """
     Handles publishing content to various platforms
     """
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict, user_email: str = None):
         """Initialize the publisher"""
         self.config = config
+        self.user_email = user_email or "default@user.com"
         self.social_config = config.get('social_media', {})
         self.blog_config = config.get('blog_platforms', {})
+        
+        # Import user settings manager if available
+        try:
+            from agent.user_settings import user_settings_manager
+            self.user_settings_manager = user_settings_manager
+            self._load_user_config()
+        except ImportError:
+            self.user_settings_manager = None
+        
+    def _load_user_config(self):
+        """Load user-specific configuration"""
+        if self.user_settings_manager:
+            user_config = self.user_settings_manager.generate_user_config(self.user_email)
+            # Override default config with user-specific settings
+            self.social_config = user_config.get('social_media', self.social_config)
+            self.blog_config = user_config.get('blog_platforms', self.blog_config)
+            self.config = user_config
         
         # Rate limiting tracking
         self.last_twitter_post = 0
@@ -225,9 +276,15 @@ class Publisher:
                 logger.error(f"Unsupported platform: {platform}")
                 return False
                 
+        except CredentialsError as e:
+            logger.error(f"❌ Credentials error for {platform}: {e.message}")
+            raise e  # Re-raise to be caught by the dashboard
+        except PlatformDisabledError as e:
+            logger.error(f"❌ Platform disabled for {platform}: {e.message}")
+            raise e  # Re-raise to be caught by the dashboard
         except Exception as e:
             logger.error(f"Error publishing to {platform}: {e}")
-            return False
+            raise PublishingError(platform, f"Publishing failed: {str(e)}", "error")
     
     async def _publish_to_twitter(self, content: str, metadata: Optional[Dict] = None,
                                  images: Optional[List[str]] = None) -> bool:
@@ -255,19 +312,13 @@ class Publisher:
             
             # Check if Twitter is enabled and configured
             if not config.get('enabled', False):
-                logger.warning("❌ Twitter publishing disabled in config - simulating publish")
-                logger.info(f"Mock Twitter post: {content[:100]}...")
-                await asyncio.sleep(1)
-                return True
+                raise PlatformDisabledError('Twitter')
             
             # Check required credentials
             required_keys = ['api_key', 'api_secret', 'access_token', 'access_token_secret']
             missing_keys = [key for key in required_keys if not config.get(key) or config.get(key).startswith('your-')]
             if missing_keys:
-                logger.warning(f"❌ Missing Twitter credentials: {missing_keys} - simulating publish")
-                logger.info(f"Mock Twitter post: {content[:100]}...")
-                await asyncio.sleep(1)
-                return True
+                raise CredentialsError('Twitter', missing_keys)
             
             # Real Twitter API publishing
             logger.info("✅ ALL CHECKS PASSED - ATTEMPTING REAL TWITTER PUBLISH")
@@ -514,19 +565,13 @@ class Publisher:
             
             # Check if LinkedIn is enabled and configured
             if not config.get('enabled', False):
-                logger.warning("❌ LinkedIn publishing disabled in config - simulating publish")
-                logger.info(f"Mock LinkedIn {content_type}: {content[:100]}...")
-                await asyncio.sleep(1)
-                return True
+                raise PlatformDisabledError('LinkedIn')
             
             # Check required credentials
             required_keys = ['client_id', 'client_secret', 'access_token']
             missing_keys = [key for key in required_keys if not config.get(key) or config.get(key).startswith('your-')]
             if missing_keys:
-                logger.warning(f"❌ Missing LinkedIn credentials: {missing_keys} - simulating publish")
-                logger.info(f"Mock LinkedIn {content_type}: {content[:100]}...")
-                await asyncio.sleep(1)
-                return True
+                raise CredentialsError('LinkedIn', missing_keys)
             
             # Real LinkedIn API publishing
             logger.info("✅ ALL CHECKS PASSED - ATTEMPTING REAL LINKEDIN PUBLISH")
@@ -742,20 +787,27 @@ class Publisher:
             
             # Check if Facebook is enabled and configured
             if not config.get('enabled', False):
-                logger.warning("❌ Facebook publishing disabled in config - simulating publish")
-                logger.info(f"Mock Facebook post: {content[:100]}...")
-                await asyncio.sleep(1)
-                return True
+                raise PlatformDisabledError('Facebook')
                 
             # Check required credentials
             required_keys = ['access_token', 'page_id']
             missing_keys = [key for key in required_keys if not config.get(key) or config.get(key).startswith('your-')]
             if missing_keys:
-                logger.warning(f"❌ Missing Facebook credentials: {missing_keys} - simulating publish")
-                logger.info(f"Mock Facebook post: {content[:100]}...")
-                await asyncio.sleep(1)
-                return True
+                raise CredentialsError('Facebook', missing_keys)
             
+            # Use automatic token validation if available
+            if FACEBOOK_TOKEN_MANAGER_AVAILABLE:
+                # Add app_id and app_secret to config for validation if not present
+                if not config.get('app_id') or not config.get('app_secret'):
+                    raise CredentialsError('Facebook', ['app_id', 'app_secret'])
+                
+                is_valid, validation_message = validate_facebook_credentials(self.user_email, config)
+                if not is_valid:
+                    raise CredentialsError('Facebook', [], validation_message)
+                logger.info(f"✅ Facebook credentials validated: {validation_message}")
+            else:
+                logger.warning("⚠️ Facebook token manager not available - using basic validation")
+                
             # Real Facebook API publishing
             logger.info("✅ ALL CHECKS PASSED - ATTEMPTING REAL FACEBOOK PUBLISH")
             

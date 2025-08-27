@@ -46,11 +46,14 @@ aiohttp>=3.9.0
 aiofiles>=23.2.0
 cryptography>=41.0.0
 
+# Authentication and Security
+pyjwt>=2.8.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.6
+
 # Additional Required Packages
 httpx>=0.25.0
-python-multipart>=0.0.6
 python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
 
 # Development
 pytest>=7.4.0

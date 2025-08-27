@@ -26,19 +26,47 @@
                         <label class="flex items-center space-x-2">
                             <input type="checkbox" name="platforms" value="twitter" class="rounded text-blue-600" id="twitterCheckbox">
                             <span class="text-sm">🐦 Twitter</span>
+                            <span id="twitter-status" class="text-xs"></span>
                         </label>
                         <label class="flex items-center space-x-2">
                             <input type="checkbox" name="platforms" value="linkedin" class="rounded text-blue-600" id="linkedinCheckbox">
                             <span class="text-sm">💼 LinkedIn</span>
+                            <span id="linkedin-status" class="text-xs"></span>
                         </label>
                         <label class="flex items-center space-x-2">
                             <input type="checkbox" name="platforms" value="facebook" class="rounded text-blue-600">
                             <span class="text-sm">📘 Facebook</span>
+                            <span id="facebook-status" class="text-xs"></span>
                         </label>
                         <label class="flex items-center space-x-2">
                             <input type="checkbox" name="platforms" value="wordpress" class="rounded text-blue-600">
                             <span class="text-sm">📝 WordPress</span>
+                            <span id="wordpress-status" class="text-xs"></span>
                         </label>
+                    </div>
+                    
+                    <!-- Credential Status Alert -->
+                    <div id="credentialAlert" class="mt-4 hidden">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-yellow-800">Platform Configuration Required</h3>
+                                    <div id="credentialAlertText" class="mt-2 text-sm text-yellow-700">
+                                        <!-- Alert content will be populated by JavaScript -->
+                                    </div>
+                                    <div class="mt-4">
+                                        <a href="/settings" class="text-sm font-medium text-yellow-800 hover:text-yellow-600 underline">
+                                            Go to Settings →
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -123,6 +151,73 @@ async function loadContent() {
     }
 }
 
+// Check platform credential status
+async function checkPlatformCredentials() {
+    const platforms = ['twitter', 'linkedin', 'facebook', 'wordpress'];
+    
+    try {
+        const response = await fetch('/settings/check-credentials', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: JSON.stringify({ platforms: platforms })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.credential_status) {
+            const status = data.credential_status;
+            
+            // Update individual platform status indicators
+            platforms.forEach(platform => {
+                const statusElement = document.getElementById(`${platform}-status`);
+                const checkbox = document.querySelector(`input[value="${platform}"]`);
+                
+                if (status.ready_platforms.includes(platform)) {
+                    statusElement.textContent = '✅';
+                    statusElement.className = 'text-xs text-green-600';
+                    statusElement.title = 'Credentials configured and ready';
+                } else {
+                    statusElement.textContent = '⚠️';
+                    statusElement.className = 'text-xs text-yellow-600';
+                    const issue = status.issues.find(i => i.platform === platform);
+                    statusElement.title = issue ? issue.message : 'Credentials not configured';
+                    
+                    // Disable checkbox for platforms without credentials
+                    if (checkbox) {
+                        checkbox.disabled = true;
+                        checkbox.parentElement.classList.add('opacity-50');
+                    }
+                }
+            });
+            
+            // Show alert if there are credential issues
+            if (status.issues.length > 0) {
+                const alertElement = document.getElementById('credentialAlert');
+                const alertText = document.getElementById('credentialAlertText');
+                
+                let alertContent = '<p class="font-medium">The following platforms need configuration:</p><ul class="mt-1 list-disc list-inside">';
+                status.issues.forEach(issue => {
+                    alertContent += `<li>${issue.platform}: ${issue.message}</li>`;
+                });
+                alertContent += '</ul>';
+                
+                alertText.innerHTML = alertContent;
+                alertElement.classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error checking platform credentials:', error);
+        // Show warning if credential check fails
+        const alertElement = document.getElementById('credentialAlert');
+        const alertText = document.getElementById('credentialAlertText');
+        alertText.innerHTML = '<p>Unable to check platform credentials. Some platforms may not be configured.</p>';
+        alertElement.classList.remove('hidden');
+    }
+}
+
 // Publish content
 document.getElementById('publishBtn').addEventListener('click', async () => {
     const contentId = document.getElementById('contentSelect').value;
@@ -137,6 +232,56 @@ document.getElementById('publishBtn').addEventListener('click', async () => {
     if (platforms.length === 0) {
         alert('Please select at least one platform');
         return;
+    }
+    
+    // First check credentials for selected platforms
+    try {
+        const credentialResponse = await fetch('/settings/check-credentials', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: JSON.stringify({ platforms: platforms })
+        });
+        
+        const credentialData = await credentialResponse.json();
+        
+        if (credentialData.success && credentialData.credential_status) {
+            const status = credentialData.credential_status;
+            
+            // If no platforms are ready, show error and redirect to settings
+            if (!status.can_publish) {
+                let message = '⚠️ Missing platform credentials:\n\n';
+                status.issues.forEach(issue => {
+                    message += `• ${issue.platform}: ${issue.message}\n`;
+                });
+                message += '\nPlease configure your credentials in Settings first.';
+                
+                const goToSettings = confirm(message + '\n\nWould you like to go to Settings now?');
+                if (goToSettings) {
+                    window.location.href = '/settings';
+                }
+                return;
+            }
+            
+            // If some platforms have issues, warn user
+            if (status.issues.length > 0) {
+                let message = '⚠️ Some platforms have credential issues:\n\n';
+                status.issues.forEach(issue => {
+                    message += `• ${issue.platform}: ${issue.message}\n`;
+                });
+                message += `\n✅ Will publish to: ${status.ready_platforms.join(', ')}\n\n`;
+                message += 'Continue with publishing to available platforms?';
+                
+                if (!confirm(message)) {
+                    return;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error checking credentials:', error);
+        // Continue with publishing if credential check fails
     }
     
     try {
@@ -161,10 +306,40 @@ document.getElementById('publishBtn').addEventListener('click', async () => {
             if (result.linkedin_mode) {
                 message += `\n💼 LinkedIn posted as: ${result.linkedin_mode}`;
             }
+            
+            // Show details about which platforms succeeded/failed
+            if (result.platform_results) {
+                message += '\n\nResults:';
+                Object.entries(result.platform_results).forEach(([platform, details]) => {
+                    if (details.success) {
+                        message += `\n✅ ${platform}: Published successfully`;
+                    } else if (details.skipped) {
+                        message += `\n⚠️ ${platform}: Skipped - ${details.error}`;
+                    } else {
+                        message += `\n❌ ${platform}: Failed - ${details.error}`;
+                    }
+                });
+            }
+            
             alert(message);
             loadRecentPublications();
         } else {
-            alert('❌ Publishing failed. Check the logs for details.');
+            let errorMessage = '❌ Publishing failed.';
+            if (result.redirect_to_settings) {
+                errorMessage = result.message || 'Missing platform credentials.';
+                errorMessage += '\n\n';
+                if (result.issues) {
+                    result.issues.forEach(issue => {
+                        errorMessage += `• ${issue.platform}: ${issue.message}\n`;
+                    });
+                }
+                const goToSettings = confirm(errorMessage + '\nWould you like to go to Settings to configure your credentials?');
+                if (goToSettings) {
+                    window.location.href = '/settings';
+                }
+            } else {
+                alert(errorMessage);
+            }
         }
     } catch (error) {
         console.error('Error publishing:', error);
@@ -232,7 +407,10 @@ function loadRecentPublications() {
     `;
 }
 
-// Load content on page load
-document.addEventListener('DOMContentLoaded', loadContent);
+// Load content and check credentials on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadContent();
+    checkPlatformCredentials();
+});
 </script>
 {% endblock %}

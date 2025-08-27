@@ -4,7 +4,7 @@ Founder Socials AI Agent - Web Dashboard
 FastAPI-based web interface for the AI agent.
 """
 
-from fastapi import FastAPI, Request, Form, HTTPException, BackgroundTasks, UploadFile
+from fastapi import FastAPI, Request, Form, HTTPException, BackgroundTasks, UploadFile, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -19,6 +19,8 @@ import logging
 
 from agent.core import FounderSocialsAgent, ContentTask
 from agent.social_auth import SocialAuthManager
+from agent.user_settings import user_settings_manager
+from agent.auth import user_manager, get_current_user, get_current_user_optional
 
 # Try to import advanced content generator
 try:
@@ -41,6 +43,28 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# Background task for token management
+async def background_token_management():
+    """Background task to check and renew tokens"""
+    while True:
+        try:
+            logger.info("Running background token management...")
+            
+            # Import Facebook token manager
+            try:
+                from agent.facebook_token_manager import auto_token_manager
+                await auto_token_manager.background_token_check(user_settings_manager)
+            except ImportError:
+                logger.warning("Facebook token manager not available for background task")
+            
+            # Wait 1 hour before next check
+            await asyncio.sleep(3600)
+            
+        except Exception as e:
+            logger.error(f"Error in background token management: {e}")
+            # Wait 10 minutes before retrying
+            await asyncio.sleep(600)
 
 def _generate_content_title(topic: str, content_type: str, platform: str, content: str) -> str:
     """Generate a meaningful title for saved content"""
@@ -102,6 +126,12 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
         version="1.0.0"
     )
     
+    # Start background token management task
+    @app.on_event("startup")
+    async def startup_event():
+        logger.info("Starting background token management...")
+        asyncio.create_task(background_token_management())
+    
     # Initialize social auth manager
     social_auth = SocialAuthManager(agent.config)
     
@@ -115,23 +145,176 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
     if static_dir.exists():
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
     
+    # Authentication routes
+    @app.get("/login", response_class=HTMLResponse)
+    async def login_page(request: Request):
+        """Login page."""
+        return templates.TemplateResponse("login.html", {"request": request})
+    
+    @app.get("/register", response_class=HTMLResponse)
+    async def register_page(request: Request):
+        """Registration page."""
+        return templates.TemplateResponse("register.html", {"request": request})
+    
+    @app.post("/auth/register")
+    async def register_user(
+        request: Request,
+        name: str = Form(...),
+        email: str = Form(...),
+        password: str = Form(...),
+        company: str = Form(None)
+    ):
+        """Register a new user."""
+        try:
+            result = user_manager.create_user(email, password, name, company)
+            return JSONResponse(content=result)
+        except Exception as e:
+            logger.error(f"Registration error: {e}")
+            return JSONResponse(
+                content={"success": False, "detail": str(e)},
+                status_code=500
+            )
+    
+    @app.post("/auth/login")
+    async def login_user(
+        request: Request,
+        email: str = Form(...),
+        password: str = Form(...)
+    ):
+        """Authenticate user and create session."""
+        try:
+            user = user_manager.authenticate_user(email, password)
+            if not user:
+                return JSONResponse(
+                    content={"success": False, "detail": "Invalid email or password"},
+                    status_code=401
+                )
+            
+            # Create access token
+            access_token = user_manager.create_access_token(data={"sub": user["email"]})
+            
+            response = JSONResponse(content={
+                "success": True,
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user": user
+            })
+            
+            # Set cookie for automatic authentication
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                max_age=30 * 24 * 60 * 60,  # 30 days
+                httponly=True,
+                secure=False,  # Set to True in production with HTTPS
+                samesite="lax"
+            )
+            
+            return response
+        except Exception as e:
+            logger.error(f"Login error: {e}")
+            return JSONResponse(
+                content={"success": False, "detail": str(e)},
+                status_code=500
+            )
+    
+    @app.post("/auth/demo-login")
+    async def demo_login(request: Request):
+        """Create a demo user session."""
+        try:
+            # Create or get demo user
+            demo_email = "demo@foundersocials.com"
+            demo_user = user_manager.authenticate_user(demo_email, "demo123")
+            
+            if not demo_user:
+                # Create demo user if it doesn't exist
+                result = user_manager.create_user(
+                    email=demo_email,
+                    password="demo123",
+                    name="Demo User",
+                    company="Demo Company"
+                )
+                if result["success"]:
+                    demo_user = user_manager.authenticate_user(demo_email, "demo123")
+            
+            if demo_user:
+                access_token = user_manager.create_access_token(data={"sub": demo_user["email"]})
+                
+                response = JSONResponse(content={
+                    "success": True,
+                    "access_token": access_token,
+                    "token_type": "bearer",
+                    "user": demo_user
+                })
+                
+                # Set cookie for automatic authentication
+                response.set_cookie(
+                    key="access_token",
+                    value=access_token,
+                    max_age=30 * 24 * 60 * 60,  # 30 days
+                    httponly=True,
+                    secure=False,  # Set to True in production with HTTPS
+                    samesite="lax"
+                )
+                
+                return response
+            else:
+                return JSONResponse(
+                    content={"success": False, "detail": "Failed to create demo user"},
+                    status_code=500
+                )
+        except Exception as e:
+            logger.error(f"Demo login error: {e}")
+            return JSONResponse(
+                content={"success": False, "detail": str(e)},
+                status_code=500
+            )
+    
+    @app.get("/auth/logout")
+    async def logout_user(request: Request):
+        """Logout user."""
+        return RedirectResponse(url="/login", status_code=302)
+    
+    # Protected route example
+    @app.get("/profile")
+    async def user_profile(request: Request, current_user: dict = Depends(get_current_user)):
+        """User profile page (protected)."""
+        stats = user_manager.get_user_stats(current_user["id"])
+        return templates.TemplateResponse(
+            "profile.html",
+            {
+                "request": request,
+                "user": current_user,
+                "stats": stats
+            }
+        )
+    
     @app.get("/", response_class=HTMLResponse)
-    async def dashboard_home(request: Request):
+    async def dashboard_home(request: Request, current_user: dict = Depends(get_current_user_optional)):
         """Main dashboard page."""
         try:
+            # Redirect to login if not authenticated
+            if not current_user:
+                return RedirectResponse(url="/login", status_code=302)
+            
             # Get recent analytics
             analytics = await agent.get_analytics_report(days=7)
             
             # Get current calendar
             calendar = await agent.mcp_manager.load_calendar()
             
+            # Get user statistics
+            stats = user_manager.get_user_stats(current_user["id"])
+            
             return templates.TemplateResponse(
                 "dashboard.html",
                 {
                     "request": request,
-                    "startup_name": agent.config.get("startup", {}).get("name", "Your Startup"),
+                    "startup_name": current_user.get("company", "Your Startup"),
                     "analytics": analytics,
-                    "calendar": calendar
+                    "calendar": calendar,
+                    "user": current_user,
+                    "stats": stats
                 }
             )
         except Exception as e:
@@ -446,7 +629,8 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
         request: Request,
         content_id: str = Form(...),
         platforms: List[str] = Form(...),
-        linkedin_mode: Optional[str] = Form(None)
+        linkedin_mode: Optional[str] = Form(None),
+        current_user: dict = Depends(get_current_user)
     ):
         """Publish content to specified platforms."""
         try:
@@ -455,6 +639,29 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             print(f"   Content ID: {content_id}")
             print(f"   Platforms: {platforms}")
             print(f"   LinkedIn Mode: {linkedin_mode}")
+            
+            user_email = current_user["email"]
+            
+            # Check credentials for all requested platforms BEFORE publishing
+            credential_check = user_settings_manager.check_multiple_platforms(user_email, platforms)
+            
+            if not credential_check['can_publish']:
+                logger.warning(f"User {user_email} attempted to publish without proper credentials")
+                return JSONResponse(
+                    content={
+                        "success": False,
+                        "error": "Missing platform credentials",
+                        "message": "Please configure your platform credentials before publishing.",
+                        "issues": credential_check['issues'],
+                        "ready_platforms": credential_check['ready_platforms'],
+                        "redirect_to_settings": True
+                    },
+                    status_code=400
+                )
+            
+            # If there are some issues but some platforms are ready, warn but allow publishing
+            if credential_check['issues']:
+                logger.warning(f"Some platforms have credential issues for user {user_email}: {credential_check['issues']}")
             
             # Load content from file system
             content_data = await agent.mcp_manager.load_content(content_id)
@@ -494,18 +701,77 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             if linkedin_mode and 'linkedin' in platforms:
                 task.metadata['linkedin_posting_mode'] = linkedin_mode
             
-            # Publish to each platform
-            success_count = 0
-            for platform in platforms:
-                task.platform = platform
-                if await agent.publish_content(task):
-                    success_count += 1
+            # Get user-specific publisher
+            user_publisher = agent.get_user_publisher(user_email)
             
-            success = success_count > 0
+            # Only publish to platforms that are ready
+            ready_platforms = credential_check['ready_platforms']
+            results = {}
+            success_count = 0
+            
+            for platform in platforms:
+                if platform not in ready_platforms:
+                    # Skip platforms with credential issues
+                    platform_issue = next((issue for issue in credential_check['issues'] if issue['platform'] == platform), None)
+                    results[platform] = {
+                        "success": False, 
+                        "error": platform_issue['message'] if platform_issue else f"{platform} credentials not configured",
+                        "skipped": True
+                    }
+                    continue
+                
+                try:
+                    task.platform = platform
+                    # Use user-specific publisher instead of agent's default publisher
+                    success = await user_publisher.publish(
+                        content=task.content,
+                        platform=platform,
+                        content_type=task.type,
+                        metadata=task.metadata
+                    )
+                    if success:
+                        success_count += 1
+                        results[platform] = {"success": True, "published": True}
+                    else:
+                        results[platform] = {"success": False, "error": "Publishing failed", "published": False}
+                except Exception as e:
+                    # Import the custom exceptions
+                    from agent.publisher import CredentialsError, PlatformDisabledError, PublishingError
+                    
+                    if isinstance(e, CredentialsError):
+                        error_msg = f"🔑 {e.message}"
+                        results[platform] = {
+                            "success": False, 
+                            "error": error_msg,
+                            "error_type": "credentials",
+                            "missing_fields": getattr(e, 'missing_fields', []),
+                            "published": False
+                        }
+                    elif isinstance(e, PlatformDisabledError):
+                        error_msg = f"⚠️ {e.message}"
+                        results[platform] = {
+                            "success": False, 
+                            "error": error_msg,
+                            "error_type": "disabled",
+                            "published": False
+                        }
+                    else:
+                        error_msg = f"❌ Publishing failed: {str(e)}"
+                        results[platform] = {
+                            "success": False, 
+                            "error": error_msg,
+                            "error_type": "error",
+                            "published": False
+                        }
+            
+            overall_success = success_count > 0
             result = {
-                "success": success, 
+                "success": overall_success, 
                 "published_platforms": success_count,
-                "total_platforms": len(platforms)
+                "total_platforms": len(platforms),
+                "ready_platforms": ready_platforms,
+                "credential_issues": credential_check['issues'],
+                "platform_results": results
             }
             
             # Include LinkedIn mode in response for user feedback
@@ -523,7 +789,8 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
         content: str = Form(...),
         platforms: str = Form(...),
         content_type: str = Form("social"),
-        images: List = None
+        images: List = None,
+        current_user: dict = Depends(get_current_user)
     ):
         """Publish content with images to specified platforms."""
         try:
@@ -534,8 +801,32 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             import json
             platform_list = json.loads(platforms)
             
+            user_email = current_user["email"]
+            
+            # Check credentials for all requested platforms BEFORE publishing
+            credential_check = user_settings_manager.check_multiple_platforms(user_email, platform_list)
+            
+            if not credential_check['can_publish']:
+                logger.warning(f"User {user_email} attempted to publish with images without proper credentials")
+                return JSONResponse(
+                    content={
+                        "success": False,
+                        "error": "Missing platform credentials",
+                        "message": "Please configure your platform credentials before publishing.",
+                        "issues": credential_check['issues'],
+                        "ready_platforms": credential_check['ready_platforms'],
+                        "redirect_to_settings": True
+                    },
+                    status_code=400
+                )
+            
+            # If there are some issues but some platforms are ready, warn but allow publishing
+            if credential_check['issues']:
+                logger.warning(f"Some platforms have credential issues for user {user_email}: {credential_check['issues']}")
+            
             logger.info(f"Publishing content with images to platforms: {platform_list}")
             logger.info(f"Content length: {len(content)}")
+            logger.info(f"Ready platforms: {credential_check['ready_platforms']}")
             
             # Handle uploaded images
             image_paths = []
@@ -561,13 +852,29 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             # Publish to each platform with images
             success_count = 0
             total_platforms = len(platform_list)
+            ready_platforms = credential_check['ready_platforms']
+            results = {}
+            
+            # Get user-specific publisher
+            user_publisher = agent.get_user_publisher(user_email)
             
             for platform in platform_list:
+                if platform not in ready_platforms:
+                    # Skip platforms with credential issues
+                    platform_issue = next((issue for issue in credential_check['issues'] if issue['platform'] == platform), None)
+                    results[platform] = {
+                        "success": False, 
+                        "error": platform_issue['message'] if platform_issue else f"{platform} credentials not configured",
+                        "skipped": True
+                    }
+                    logger.warning(f"❌ Skipping {platform} - credentials not configured")
+                    continue
+                
                 try:
                     logger.info(f"Publishing to {platform} with {len(image_paths)} images")
                     
-                    # Use the enhanced publisher with image support
-                    result = await agent.publisher.publish(
+                    # Use the enhanced user-specific publisher with image support
+                    result = await user_publisher.publish(
                         content=content,
                         platform=platform,
                         content_type=content_type,
@@ -576,12 +883,42 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
                     
                     if result:
                         success_count += 1
+                        results[platform] = {"success": True, "published": True}
                         logger.info(f"✅ Successfully published to {platform}")
                     else:
+                        results[platform] = {"success": False, "error": "Publishing failed", "published": False}
                         logger.error(f"❌ Failed to publish to {platform}")
                         
                 except Exception as e:
-                    logger.error(f"Error publishing to {platform}: {e}")
+                    # Import the custom exceptions
+                    from agent.publisher import CredentialsError, PlatformDisabledError, PublishingError
+                    
+                    if isinstance(e, CredentialsError):
+                        error_msg = f"🔑 {e.message}"
+                        results[platform] = {
+                            "success": False, 
+                            "error": error_msg,
+                            "error_type": "credentials",
+                            "missing_fields": getattr(e, 'missing_fields', []),
+                            "published": False
+                        }
+                    elif isinstance(e, PlatformDisabledError):
+                        error_msg = f"⚠️ {e.message}"
+                        results[platform] = {
+                            "success": False, 
+                            "error": error_msg,
+                            "error_type": "disabled",
+                            "published": False
+                        }
+                    else:
+                        error_msg = f"❌ Publishing failed: {str(e)}"
+                        results[platform] = {
+                            "success": False, 
+                            "error": error_msg,
+                            "error_type": "error",
+                            "published": False
+                        }
+                    logger.error(f"Error publishing to {platform}: {error_msg}")
                     continue
             
             # Clean up temporary files
@@ -597,8 +934,11 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
                 "success": success,
                 "published_platforms": success_count,
                 "total_platforms": total_platforms,
+                "ready_platforms": ready_platforms,
                 "platforms": platform_list,
-                "images_uploaded": len(image_paths)
+                "images_uploaded": len(image_paths),
+                "credential_issues": credential_check['issues'],
+                "platform_results": results
             }
             
             logger.info(f"Publishing result: {result}")
@@ -609,13 +949,13 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             raise HTTPException(status_code=500, detail=str(e))
     
     @app.get("/analytics", response_class=HTMLResponse)
-    async def analytics_page(request: Request):
+    async def analytics_page(request: Request, current_user: dict = Depends(get_current_user)):
         """Analytics dashboard page."""
         try:
             analytics = await agent.get_analytics_report(days=30)
             return templates.TemplateResponse(
                 "analytics.html",
-                {"request": request, "analytics": analytics}
+                {"request": request, "analytics": analytics, "user": current_user}
             )
         except Exception as e:
             logger.error(f"Error loading analytics: {e}")
@@ -625,7 +965,7 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             )
     
     @app.get("/api/analytics")
-    async def get_analytics_api(days: int = 30):
+    async def get_analytics_api(days: int = 30, current_user: dict = Depends(get_current_user)):
         """API endpoint for analytics data."""
         try:
             analytics = await agent.get_analytics_report(days)
@@ -730,10 +1070,256 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
             logger.error(f"Error getting auth status: {e}")
             raise HTTPException(status_code=500, detail=str(e))
     
+    # New user settings endpoints
+    @app.post("/settings/platform")
+    async def save_platform_settings(request: Request, current_user: dict = Depends(get_current_user)):
+        """Save platform-specific settings for a user"""
+        try:
+            data = await request.json()
+            platform = data.get('platform')
+            enabled = data.get('enabled', False)
+            config = data.get('config', {})
+            
+            user_email = current_user["email"]
+            
+            settings = {
+                'enabled': enabled,
+                'config': config
+            }
+            
+            success = user_settings_manager.save_platform_settings(user_email, platform, settings)
+            
+            if success:
+                return JSONResponse(content={"success": True, "message": f"{platform} settings saved successfully"})
+            else:
+                return JSONResponse(
+                    content={"success": False, "detail": "Failed to save settings"},
+                    status_code=500
+                )
+        except Exception as e:
+            logger.error(f"Error saving platform settings: {e}")
+            return JSONResponse(
+                content={"success": False, "detail": str(e)},
+                status_code=500
+            )
+    
+    @app.post("/settings/startup")
+    async def save_startup_settings(request: Request, current_user: dict = Depends(get_current_user)):
+        """Save startup information for a user"""
+        try:
+            data = await request.json()
+            user_email = current_user["email"]
+            
+            success = user_settings_manager.save_startup_settings(user_email, data)
+            
+            if success:
+                return JSONResponse(content={"success": True, "message": "Startup settings saved successfully"})
+            else:
+                return JSONResponse(
+                    content={"success": False, "detail": "Failed to save startup settings"},
+                    status_code=500
+                )
+        except Exception as e:
+            logger.error(f"Error saving startup settings: {e}")
+            return JSONResponse(
+                content={"success": False, "detail": str(e)},
+                status_code=500
+            )
+    
+    @app.post("/settings/test-connection")
+    async def test_platform_connection(request: Request, current_user: dict = Depends(get_current_user)):
+        """Test connection to a platform with given credentials"""
+        try:
+            data = await request.json()
+            platform = data.get('platform')
+            config = data.get('config', {})
+            
+            result = user_settings_manager.test_platform_connection(platform, config)
+            
+            return JSONResponse(content=result)
+        except Exception as e:
+            logger.error(f"Error testing platform connection: {e}")
+            return JSONResponse(
+                content={"success": False, "error": str(e)},
+                status_code=500
+            )
+    
+    @app.post("/settings/check-credentials")
+    async def check_platform_credentials(request: Request, current_user: dict = Depends(get_current_user)):
+        """Check if user has configured credentials for specified platforms"""
+        try:
+            data = await request.json()
+            platforms = data.get('platforms', [])
+            user_email = current_user["email"]
+            
+            credential_check = user_settings_manager.check_multiple_platforms(user_email, platforms)
+            
+            return JSONResponse(content={
+                "success": True,
+                "credential_status": credential_check
+            })
+        except Exception as e:
+            logger.error(f"Error checking credentials: {e}")
+            return JSONResponse(
+                content={"success": False, "error": str(e)},
+                status_code=500
+            )
+    
+    @app.post("/settings/facebook/validate-token")
+    async def validate_facebook_token(request: Request, current_user: dict = Depends(get_current_user)):
+        """Validate and auto-renew Facebook token if needed"""
+        try:
+            user_email = current_user["email"]
+            facebook_settings = user_settings_manager.get_platform_settings(user_email, 'facebook')
+            
+            if not facebook_settings or not facebook_settings.get('enabled'):
+                return JSONResponse(
+                    content={"success": False, "error": "Facebook not configured or disabled"},
+                    status_code=400
+                )
+            
+            # Import Facebook token manager
+            try:
+                from agent.facebook_token_manager import validate_facebook_credentials, auto_token_manager
+                
+                facebook_config = facebook_settings.get('config', {})
+                result = auto_token_manager.check_and_refresh_token(user_email, facebook_config)
+                
+                # If token was renewed, save it back
+                if result.get('token_renewed') and result.get('new_token'):
+                    facebook_config['access_token'] = result['new_token']
+                    user_settings_manager.save_platform_settings(
+                        user_email, 
+                        'facebook', 
+                        {'enabled': facebook_settings['enabled'], 'config': facebook_config}
+                    )
+                    logger.info(f"Updated Facebook token for user {user_email}")
+                
+                return JSONResponse(content={
+                    "success": result['success'],
+                    "message": result['message'],
+                    "token_renewed": result.get('token_renewed', False),
+                    "needs_manual_intervention": result.get('needs_manual_intervention', False)
+                })
+                
+            except ImportError:
+                return JSONResponse(
+                    content={"success": False, "error": "Facebook token manager not available"},
+                    status_code=500
+                )
+            
+        except Exception as e:
+            logger.error(f"Error validating Facebook token: {e}")
+            return JSONResponse(
+                content={"success": False, "error": str(e)},
+                status_code=500
+            )
+    
+    @app.post("/settings/facebook/manual-token-update")
+    async def manual_facebook_token_update(request: Request, current_user: dict = Depends(get_current_user)):
+        """Manually update Facebook token with a new one"""
+        try:
+            data = await request.json()
+            new_token = data.get('access_token', '').strip()
+            
+            if not new_token:
+                return JSONResponse(
+                    content={"success": False, "error": "Access token is required"},
+                    status_code=400
+                )
+            
+            user_email = current_user["email"]
+            facebook_settings = user_settings_manager.get_platform_settings(user_email, 'facebook')
+            
+            if not facebook_settings:
+                return JSONResponse(
+                    content={"success": False, "error": "Facebook not configured"},
+                    status_code=400
+                )
+            
+            # Test the new token
+            try:
+                from agent.facebook_token_manager import FacebookTokenManager
+                
+                facebook_config = facebook_settings.get('config', {})
+                app_id = facebook_config.get('app_id')
+                app_secret = facebook_config.get('app_secret')
+                page_id = facebook_config.get('page_id')
+                
+                if not all([app_id, app_secret, page_id]):
+                    return JSONResponse(
+                        content={"success": False, "error": "Missing Facebook app credentials (app_id, app_secret, page_id)"},
+                        status_code=400
+                    )
+                
+                token_manager = FacebookTokenManager(app_id, app_secret)
+                is_valid, message = token_manager.validate_for_publishing(new_token, page_id)
+                
+                if not is_valid:
+                    return JSONResponse(
+                        content={"success": False, "error": f"Token validation failed: {message}"},
+                        status_code=400
+                    )
+                
+                # Save the new token
+                facebook_config['access_token'] = new_token
+                user_settings_manager.save_platform_settings(
+                    user_email, 
+                    'facebook', 
+                    {'enabled': facebook_settings['enabled'], 'config': facebook_config}
+                )
+                
+                return JSONResponse(content={
+                    "success": True,
+                    "message": f"Facebook token updated successfully. {message}"
+                })
+                
+            except ImportError:
+                # Fallback without full validation
+                facebook_config = facebook_settings.get('config', {})
+                facebook_config['access_token'] = new_token
+                user_settings_manager.save_platform_settings(
+                    user_email, 
+                    'facebook', 
+                    {'enabled': facebook_settings['enabled'], 'config': facebook_config}
+                )
+                
+                return JSONResponse(content={
+                    "success": True,
+                    "message": "Facebook token updated (validation unavailable)"
+                })
+            
+        except Exception as e:
+            logger.error(f"Error updating Facebook token: {e}")
+            return JSONResponse(
+                content={"success": False, "error": str(e)},
+                status_code=500
+            )
+    
+    @app.get("/settings/current")
+    async def get_current_settings(request: Request, current_user: dict = Depends(get_current_user)):
+        """Get current settings for a user"""
+        try:
+            user_email = current_user["email"]
+            settings = user_settings_manager.get_all_user_settings(user_email)
+            
+            return JSONResponse(content=settings)
+        except Exception as e:
+            logger.error(f"Error getting current settings: {e}")
+            return JSONResponse(
+                content={"success": False, "detail": str(e)},
+                status_code=500
+            )
+    
     @app.get("/settings", response_class=HTMLResponse)
-    async def settings_page(request: Request):
+    async def settings_page(request: Request, current_user: dict = Depends(get_current_user)):
         """Settings page."""
         try:
+            user_email = current_user["email"]
+            
+            # Get user-specific configuration
+            user_config = user_settings_manager.generate_user_config(user_email)
+            
             # Get connection status for all platforms
             connection_status = social_auth.get_connection_status()
             configured_platforms = social_auth.get_configured_platforms()
@@ -742,9 +1328,10 @@ def create_dashboard_app(agent: FounderSocialsAgent) -> FastAPI:
                 "settings.html",
                 {
                     "request": request,
-                    "config": agent.config,
+                    "config": user_config,
                     "connection_status": connection_status,
-                    "configured_platforms": configured_platforms
+                    "configured_platforms": configured_platforms,
+                    "user": current_user
                 }
             )
         except Exception as e:

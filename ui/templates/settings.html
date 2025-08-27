@@ -1,13 +1,369 @@
 {% extends "base.html" %}
 
-{% block title %}Settings - {{ startup_name }}{% endblock %}
+{% block title %}Settings - Founder Socials AI Agent{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
-        <p class="mt-2 text-gray-600">Configure your startup details and social media connections</p>
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">⚙️ Platform Settings</h1>
+        <p class="text-gray-600">Configure your social media platform credentials to enable publishing.</p>
     </div>
+
+    <!-- Platform Status Overview -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">📊 Platform Status</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div id="facebook-status" class="p-4 border rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-red-400 rounded-full mr-2" id="facebook-indicator"></div>
+                        <span class="font-medium">📘 Facebook</span>
+                    </div>
+                    <span class="text-sm text-gray-500" id="facebook-status-text">Not configured</span>
+                </div>
+            </div>
+            <div id="linkedin-status" class="p-4 border rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-red-400 rounded-full mr-2" id="linkedin-indicator"></div>
+                        <span class="font-medium">💼 LinkedIn</span>
+                    </div>
+                    <span class="text-sm text-gray-500" id="linkedin-status-text">Not configured</span>
+                </div>
+            </div>
+            <div id="twitter-status" class="p-4 border rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-red-400 rounded-full mr-2" id="twitter-indicator"></div>
+                        <span class="font-medium">🐦 Twitter/X</span>
+                    </div>
+                    <span class="text-sm text-gray-500" id="twitter-status-text">Not configured</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Configuration Tabs -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 px-6">
+                <button class="tab-button active border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600" data-tab="facebook">
+                    📘 Facebook
+                </button>
+                <button class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="linkedin">
+                    💼 LinkedIn
+                </button>
+                <button class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="twitter">
+                    🐦 Twitter/X
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="p-6">
+            <!-- Facebook Configuration -->
+            <div id="facebook-tab" class="tab-content">
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">Facebook Configuration</h3>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="facebook-enabled" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-900">Enable Facebook Publishing</span>
+                        </label>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-medium text-blue-900 mb-2">📋 Setup Instructions</h4>
+                        <ol class="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                            <li>Go to <a href="https://developers.facebook.com/" target="_blank" class="underline">Facebook Developers</a></li>
+                            <li>Create an app and get your App ID and App Secret</li>
+                            <li>Add "Pages" permissions to your app</li>
+                            <li>Generate a Page Access Token for your Facebook page</li>
+                            <li>Find your Page ID in your Facebook page settings</li>
+                        </ol>
+                    </div>
+
+                    <form id="facebook-form" class="space-y-4">
+                        <div>
+                            <label for="facebook-access-token" class="block text-sm font-medium text-gray-700 mb-2">
+                                Page Access Token *
+                            </label>
+                            <input type="password" id="facebook-access-token" name="access_token" 
+                                   placeholder="Enter your Facebook Page Access Token"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="facebook-app-id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    App ID *
+                                </label>
+                                <input type="text" id="facebook-app-id" name="app_id" 
+                                       placeholder="Your Facebook App ID"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="facebook-app-secret" class="block text-sm font-medium text-gray-700 mb-2">
+                                    App Secret *
+                                </label>
+                                <input type="password" id="facebook-app-secret" name="app_secret" 
+                                       placeholder="Your Facebook App Secret"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="facebook-page-id" class="block text-sm font-medium text-gray-700 mb-2">
+                                Page ID *
+                            </label>
+                            <input type="text" id="facebook-page-id" name="page_id" 
+                                   placeholder="Your Facebook Page ID"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex space-x-4">
+                            <button type="button" onclick="testConnection('facebook')" 
+                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                🔍 Test Connection
+                            </button>
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                💾 Save Configuration
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- LinkedIn Configuration -->
+            <div id="linkedin-tab" class="tab-content hidden">
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">LinkedIn Configuration</h3>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="linkedin-enabled" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-900">Enable LinkedIn Publishing</span>
+                        </label>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-medium text-blue-900 mb-2">📋 Setup Instructions</h4>
+                        <ol class="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                            <li>Go to <a href="https://developer.linkedin.com/" target="_blank" class="underline">LinkedIn Developers</a></li>
+                            <li>Create an application and get your Client ID and Client Secret</li>
+                            <li>Request "Share on LinkedIn" and "Marketing API" permissions</li>
+                            <li>Generate an access token with proper scopes</li>
+                            <li>Get your company/organization ID if posting as company</li>
+                        </ol>
+                    </div>
+
+                    <form id="linkedin-form" class="space-y-4">
+                        <div>
+                            <label for="linkedin-access-token" class="block text-sm font-medium text-gray-700 mb-2">
+                                Access Token *
+                            </label>
+                            <input type="password" id="linkedin-access-token" name="access_token" 
+                                   placeholder="Enter your LinkedIn Access Token"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="linkedin-client-id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Client ID *
+                                </label>
+                                <input type="text" id="linkedin-client-id" name="client_id" 
+                                       placeholder="Your LinkedIn Client ID"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="linkedin-client-secret" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Client Secret *
+                                </label>
+                                <input type="password" id="linkedin-client-secret" name="client_secret" 
+                                       placeholder="Your LinkedIn Client Secret"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="linkedin-company-id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Company ID (Optional)
+                                </label>
+                                <input type="text" id="linkedin-company-id" name="company_id" 
+                                       placeholder="Company ID for business posting"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="linkedin-posting-mode" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Posting Mode
+                                </label>
+                                <select id="linkedin-posting-mode" name="posting_mode" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="personal">Personal Profile</option>
+                                    <option value="company">Company Page</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button type="button" onclick="testConnection('linkedin')" 
+                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                🔍 Test Connection
+                            </button>
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                💾 Save Configuration
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Twitter Configuration -->
+            <div id="twitter-tab" class="tab-content hidden">
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">Twitter/X Configuration</h3>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="twitter-enabled" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-900">Enable Twitter/X Publishing</span>
+                        </label>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-medium text-blue-900 mb-2">📋 Setup Instructions</h4>
+                        <ol class="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                            <li>Go to <a href="https://developer.twitter.com/" target="_blank" class="underline">Twitter Developer Portal</a></li>
+                            <li>Create an application and get API keys</li>
+                            <li>Generate access tokens with read/write permissions</li>
+                            <li>Ensure your app has "Tweet" permissions enabled</li>
+                            <li>Get your Bearer Token for enhanced features</li>
+                        </ol>
+                    </div>
+
+                    <form id="twitter-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="twitter-api-key" class="block text-sm font-medium text-gray-700 mb-2">
+                                    API Key *
+                                </label>
+                                <input type="password" id="twitter-api-key" name="api_key" 
+                                       placeholder="Your Twitter API Key"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="twitter-api-secret" class="block text-sm font-medium text-gray-700 mb-2">
+                                    API Secret *
+                                </label>
+                                <input type="password" id="twitter-api-secret" name="api_secret" 
+                                       placeholder="Your Twitter API Secret"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="twitter-access-token" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Access Token *
+                                </label>
+                                <input type="password" id="twitter-access-token" name="access_token" 
+                                       placeholder="Your Twitter Access Token"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="twitter-access-token-secret" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Access Token Secret *
+                                </label>
+                                <input type="password" id="twitter-access-token-secret" name="access_token_secret" 
+                                       placeholder="Your Twitter Access Token Secret"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="twitter-bearer-token" class="block text-sm font-medium text-gray-700 mb-2">
+                                Bearer Token *
+                            </label>
+                            <input type="password" id="twitter-bearer-token" name="bearer_token" 
+                                   placeholder="Your Twitter Bearer Token"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="twitter-client-id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Client ID
+                                </label>
+                                <input type="text" id="twitter-client-id" name="client_id" 
+                                       placeholder="Your Twitter Client ID (Optional)"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="twitter-client-secret" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Client Secret
+                                </label>
+                                <input type="password" id="twitter-client-secret" name="client_secret" 
+                                       placeholder="Your Twitter Client Secret (Optional)"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button type="button" onclick="testConnection('twitter')" 
+                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                🔍 Test Connection
+                            </button>
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                💾 Save Configuration
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Startup Information -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">🏢 Startup Information</h2>
+        <p class="text-gray-600 mb-4">This information will be used to personalize your content generation.</p>
+        
+        <form id="startup-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="startup-name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Startup Name *
+                    </label>
+                    <input type="text" id="startup-name" name="name" 
+                           placeholder="Your Startup Name"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="startup-website" class="block text-sm font-medium text-gray-700 mb-2">
+                        Website
+                    </label>
+                    <input type="url" id="startup-website" name="website" 
+                           placeholder="https://yourstartup.com"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div>
+                <label for="startup-industry" class="block text-sm font-medium text-gray-700 mb-2">
+                    Industry
+                </label>
+                <input type="text" id="startup-industry" name="industry" 
+                       placeholder="e.g., Technology, Healthcare, Finance"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="startup-description" class="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                </label>
+                <textarea id="startup-description" name="description" rows="3"
+                          placeholder="Brief description of your startup and what you do"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                💾 Save Startup Information
+            </button>
+        </form>
+    </div>
+</div>
 
     <!-- Social Media Connections -->
     <div class="bg-white shadow rounded-lg mb-8">
@@ -18,409 +374,270 @@
         
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Twitter/X -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                            </svg>
-                            <span class="ml-2 font-medium text-gray-900">Twitter/X</span>
-                        </div>
-                        <div id="twitter-status" class="flex items-center">
-                            {% if connection_status.twitter.connected %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    Connected
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    Not Connected
-                                </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    {% if connection_status.twitter.connected %}
-                        <div class="text-sm text-gray-600 mb-3">
-                            <p>Expires: {{ connection_status.twitter.expires_at[:10] }}</p>
-                            <p>Scope: {{ connection_status.twitter.scope }}</p>
-                        </div>
-                        <button onclick="disconnectPlatform('twitter')" class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                            Disconnect
-                        </button>
-                    {% else %}
-                        {% if 'twitter' in configured_platforms %}
-                            <button onclick="connectPlatform('twitter')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                                Connect Twitter
-                            </button>
-                        {% else %}
-                            <div class="text-sm text-gray-500 mb-3">
-                                <p>Add Twitter API credentials in config to enable connection</p>
-                            </div>
-                            <button disabled class="w-full bg-gray-300 text-gray-500 text-sm font-medium py-2 px-4 rounded-md cursor-not-allowed">
-                                Not Configured
-                            </button>
-                        {% endif %}
-                    {% endif %}
-                </div>
-
-                <!-- LinkedIn -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                            </svg>
-                            <span class="ml-2 font-medium text-gray-900">LinkedIn</span>
-                        </div>
-                        <div id="linkedin-status" class="flex items-center">
-                            {% if connection_status.linkedin.connected %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    Connected
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    Not Connected
-                                </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    {% if connection_status.linkedin.connected %}
-                        <div class="text-sm text-gray-600 mb-3">
-                            <p>Expires: {{ connection_status.linkedin.expires_at[:10] }}</p>
-                            <p>Scope: {{ connection_status.linkedin.scope }}</p>
-                        </div>
-                        <button onclick="disconnectPlatform('linkedin')" class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                            Disconnect
-                        </button>
-                    {% else %}
-                        {% if 'linkedin' in configured_platforms %}
-                            <button onclick="connectPlatform('linkedin')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                                Connect LinkedIn
-                            </button>
-                        {% else %}
-                            <div class="text-sm text-gray-500 mb-3">
-                                <p>Add LinkedIn API credentials in config to enable connection</p>
-                            </div>
-                            <button disabled class="w-full bg-gray-300 text-gray-500 text-sm font-medium py-2 px-4 rounded-md cursor-not-allowed">
-                                Not Configured
-                            </button>
-                        {% endif %}
-                    {% endif %}
-                </div>
-
-                <!-- Facebook -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                            </svg>
-                            <span class="ml-2 font-medium text-gray-900">Facebook</span>
-                        </div>
-                        <div id="facebook-status" class="flex items-center">
-                            {% if connection_status.facebook.connected %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    Connected
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    Not Connected
-                                </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    {% if connection_status.facebook.connected %}
-                        <div class="text-sm text-gray-600 mb-3">
-                            <p>Expires: {{ connection_status.facebook.expires_at[:10] }}</p>
-                            <p>Scope: {{ connection_status.facebook.scope }}</p>
-                        </div>
-                        <button onclick="disconnectPlatform('facebook')" class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                            Disconnect
-                        </button>
-                    {% else %}
-                        {% if 'facebook' in configured_platforms %}
-                            <button onclick="connectPlatform('facebook')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                                Connect Facebook
-                            </button>
-                        {% else %}
-                            <div class="text-sm text-gray-500 mb-3">
-                                <p>Add Facebook API credentials in config to enable connection</p>
-                            </div>
-                            <button disabled class="w-full bg-gray-300 text-gray-500 text-sm font-medium py-2 px-4 rounded-md cursor-not-allowed">
-                                Not Configured
-                            </button>
-                        {% endif %}
-                    {% endif %}
-                </div>
-
-                <!-- Instagram -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.297-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.807.875 1.297 2.026 1.297 3.323s-.49 2.448-1.297 3.323c-.875.807-2.026 1.297-3.323 1.297zm7.718-1.297c-.875.807-2.026 1.297-3.323 1.297s-2.448-.49-3.323-1.297c-.807-.875-1.297-2.026-1.297-3.323s.49-2.448 1.297-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.807.875 1.297 2.026 1.297 3.323s-.49 2.448-1.297 3.323z"/>
-                            </svg>
-                            <span class="ml-2 font-medium text-gray-900">Instagram</span>
-                        </div>
-                        <div id="instagram-status" class="flex items-center">
-                            {% if connection_status.instagram.connected %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    Connected
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    Not Connected
-                                </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    {% if connection_status.instagram.connected %}
-                        <div class="text-sm text-gray-600 mb-3">
-                            <p>Expires: {{ connection_status.instagram.expires_at[:10] }}</p>
-                            <p>Scope: {{ connection_status.instagram.scope }}</p>
-                        </div>
-                        <button onclick="disconnectPlatform('instagram')" class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                            Disconnect
-                        </button>
-                    {% else %}
-                        {% if 'instagram' in configured_platforms %}
-                            <button onclick="connectPlatform('instagram')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                                Connect Instagram
-                            </button>
-                        {% else %}
-                            <div class="text-sm text-gray-500 mb-3">
-                                <p>Add Instagram API credentials in config to enable connection</p>
-                            </div>
-                            <button disabled class="w-full bg-gray-300 text-gray-500 text-sm font-medium py-2 px-4 rounded-md cursor-not-allowed">
-                                Not Configured
-                            </button>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Startup Configuration -->
     <div class="bg-white shadow rounded-lg mb-8">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">Startup Configuration</h2>
-            <p class="mt-1 text-sm text-gray-600">Update your startup details and preferences</p>
+            <h2 class="text-xl font-semibold text-gray-900">Social Media Connections</h2>
+            <p class="mt-1 text-sm text-gray-600">Connect your social media accounts to enable automatic posting</p>
         </div>
         
         <div class="p-6">
-            <form id="startup-config-form" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="startup-name" class="block text-sm font-medium text-gray-700">Startup Name</label>
-                        <input type="text" id="startup-name" name="startup_name" value="{{ config.startup.name }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>
-                    
-                    <div>
-                        <label for="startup-industry" class="block text-sm font-medium text-gray-700">Industry</label>
-                        <input type="text" id="startup-industry" name="startup_industry" value="{{ config.startup.industry }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>
-                    
-                    <div>
-                        <label for="startup-description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea id="startup-description" name="startup_description" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">{{ config.startup.description }}</textarea>
-                    </div>
-                    
-                    <div>
-                        <label for="startup-website" class="block text-sm font-medium text-gray-700">Website</label>
-                        <input type="url" id="startup-website" name="startup_website" value="{{ config.startup.website }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                        Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- API Configuration -->
-    <div class="bg-white shadow rounded-lg">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">API Configuration</h2>
-            <p class="mt-1 text-sm text-gray-600">Configure API keys for AI providers and platforms</p>
-        </div>
-        
-        <div class="p-6">
-            <div class="space-y-6">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">AI Providers</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="openai-key" class="block text-sm font-medium text-gray-700">OpenAI API Key</label>
-                            <input type="password" id="openai-key" name="openai_key" value="{{ config.api_keys.openai.api_key }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        
-                        <div>
-                            <label for="anthropic-key" class="block text-sm font-medium text-gray-700">Anthropic API Key</label>
-                            <input type="password" id="anthropic-key" name="anthropic_key" value="{{ config.api_keys.anthropic.api_key }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-                </div>
-                
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media Platforms</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="twitter-client-id" class="block text-sm font-medium text-gray-700">Twitter Client ID</label>
-                            <input type="text" id="twitter-client-id" name="twitter_client_id" value="{{ config.api_keys.twitter.client_id }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        
-                        <div>
-                            <label for="twitter-client-secret" class="block text-sm font-medium text-gray-700">Twitter Client Secret</label>
-                            <input type="password" id="twitter-client-secret" name="twitter_client_secret" value="{{ config.api_keys.twitter.client_secret }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        
-                        <div>
-                            <label for="linkedin-client-id" class="block text-sm font-medium text-gray-700">LinkedIn Client ID</label>
-                            <input type="text" id="linkedin-client-id" name="linkedin_client_id" value="{{ config.api_keys.linkedin.client_id }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        
-                        <div>
-                            <label for="linkedin-client-secret" class="block text-sm font-medium text-gray-700">LinkedIn Client Secret</label>
-                            <input type="password" id="linkedin-client-secret" name="linkedin_client_secret" value="{{ config.api_keys.linkedin.client_secret }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button type="button" onclick="saveApiConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                        Save API Configuration
-                    </button>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Notification -->
+<div id="notification" class="hidden fixed top-4 right-4 max-w-sm w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+    <div class="p-4">
+        <div class="flex items-start">
+            <div class="ml-3 w-0 flex-1">
+                <p id="notification-message" class="text-sm font-medium text-gray-900"></p>
+            </div>
+            <div class="ml-4 flex-shrink-0 flex">
+                <button onclick="hideNotification()" class="inline-flex text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
-function connectPlatform(platform) {
-    showLoading(`Connecting to ${platform}...`);
-    window.location.href = `/auth/${platform}/connect`;
-}
-
-async function disconnectPlatform(platform) {
-    if (!confirm(`Are you sure you want to disconnect ${platform}?`)) {
-        return;
-    }
+// Tab switching functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
     
-    showLoading(`Disconnecting from ${platform}...`);
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.dataset.tab;
+            
+            // Update button styles
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            button.classList.add('active', 'border-blue-500', 'text-blue-600');
+            button.classList.remove('border-transparent', 'text-gray-500');
+            
+            // Update content visibility
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(targetTab + '-tab').classList.remove('hidden');
+        });
+    });
+    
+    // Load current settings
+    loadCurrentSettings();
+});
+
+// Form submission handlers
+document.getElementById('facebook-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await savePlatformSettings('facebook');
+});
+
+document.getElementById('linkedin-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await savePlatformSettings('linkedin');
+});
+
+document.getElementById('twitter-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await savePlatformSettings('twitter');
+});
+
+document.getElementById('startup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await saveStartupSettings();
+});
+
+async function savePlatformSettings(platform) {
+    const form = document.getElementById(platform + '-form');
+    const formData = new FormData(form);
+    const enabled = document.getElementById(platform + '-enabled').checked;
+    
+    const settings = {
+        platform: platform,
+        enabled: enabled,
+        config: Object.fromEntries(formData)
+    };
+    
+    // Debug logging
+    console.log(`Saving ${platform} settings:`, settings);
+    console.log(`${platform} enabled:`, enabled);
     
     try {
-        const response = await fetch(`/auth/${platform}/disconnect`, {
+        const response = await fetch('/settings/platform', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify(settings)
         });
         
         const result = await response.json();
         
-        if (result.success) {
-            showNotification(`Successfully disconnected from ${platform}`, 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
+        if (response.ok) {
+            showNotification(`${platform.charAt(0).toUpperCase() + platform.slice(1)} settings saved successfully! Enabled: ${enabled}`, 'success');
+            updatePlatformStatus(platform, enabled);
         } else {
-            showNotification(`Failed to disconnect from ${platform}`, 'error');
+            showNotification(`Failed to save ${platform} settings: ${result.detail}`, 'error');
         }
     } catch (error) {
-        showNotification(`Error disconnecting from ${platform}: ${error.message}`, 'error');
+        showNotification(`Error saving ${platform} settings: ${error.message}`, 'error');
     }
-    
-    hideLoading();
 }
 
-async function saveApiConfig() {
-    showLoading('Saving API configuration...');
-    
-    const formData = new FormData();
-    formData.append('openai_key', document.getElementById('openai-key').value);
-    formData.append('anthropic_key', document.getElementById('anthropic-key').value);
-    formData.append('twitter_client_id', document.getElementById('twitter-client-id').value);
-    formData.append('twitter_client_secret', document.getElementById('twitter-client-secret').value);
-    formData.append('linkedin_client_id', document.getElementById('linkedin-client-id').value);
-    formData.append('linkedin_client_secret', document.getElementById('linkedin-client-secret').value);
+async function saveStartupSettings() {
+    const form = document.getElementById('startup-form');
+    const formData = new FormData(form);
+    const settings = Object.fromEntries(formData);
     
     try {
-        const response = await fetch('/settings/update', {
+        const response = await fetch('/settings/startup', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
         });
         
         const result = await response.json();
         
-        if (result.success) {
-            showNotification('API configuration saved successfully', 'success');
+        if (response.ok) {
+            showNotification('Startup information saved successfully!', 'success');
         } else {
-            showNotification('Failed to save API configuration', 'error');
+            showNotification(`Failed to save startup information: ${result.detail}`, 'error');
         }
     } catch (error) {
-        showNotification(`Error saving API configuration: ${error.message}`, 'error');
+        showNotification(`Error saving startup information: ${error.message}`, 'error');
     }
-    
-    hideLoading();
 }
 
-// Handle startup config form submission
-document.getElementById('startup-config-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+async function testConnection(platform) {
+    const form = document.getElementById(platform + '-form');
+    const formData = new FormData(form);
+    const config = Object.fromEntries(formData);
     
-    showLoading('Saving startup configuration...');
-    
-    const formData = new FormData(this);
+    showNotification(`Testing ${platform} connection...`, 'info');
     
     try {
-        const response = await fetch('/settings/update', {
+        const response = await fetch('/settings/test-connection', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                platform: platform,
+                config: config
+            })
         });
         
         const result = await response.json();
         
-        if (result.success) {
-            showNotification('Startup configuration saved successfully', 'success');
+        if (response.ok && result.success) {
+            showNotification(`${platform.charAt(0).toUpperCase() + platform.slice(1)} connection successful!`, 'success');
         } else {
-            showNotification('Failed to save startup configuration', 'error');
+            showNotification(`${platform.charAt(0).toUpperCase() + platform.slice(1)} connection failed: ${result.error}`, 'error');
         }
     } catch (error) {
-        showNotification(`Error saving startup configuration: ${error.message}`, 'error');
+        showNotification(`Error testing ${platform} connection: ${error.message}`, 'error');
     }
-    
-    hideLoading();
-});
+}
 
-// Refresh connection status periodically
-setInterval(async function() {
+async function loadCurrentSettings() {
     try {
-        const response = await fetch('/api/auth/status');
-        const status = await response.json();
+        const response = await fetch('/settings/current');
+        const settings = await response.json();
         
-        // Update status indicators
-        Object.keys(status).forEach(platform => {
-            const statusElement = document.getElementById(`${platform}-status`);
-            if (statusElement) {
-                if (status[platform].connected) {
-                    statusElement.innerHTML = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Connected</span>';
-                } else {
-                    statusElement.innerHTML = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Not Connected</span>';
+        console.log('Loading settings:', settings);
+        
+        if (response.ok) {
+            // Load platform settings
+            ['facebook', 'linkedin', 'twitter'].forEach(platform => {
+                const platformSettings = settings.platforms[platform];
+                console.log(`${platform} settings:`, platformSettings);
+                
+                if (platformSettings) {
+                    // Set enabled state
+                    const enabledCheckbox = document.getElementById(platform + '-enabled');
+                    if (enabledCheckbox) {
+                        enabledCheckbox.checked = platformSettings.enabled;
+                        console.log(`Set ${platform} enabled to:`, platformSettings.enabled);
+                    }
+                    updatePlatformStatus(platform, platformSettings.enabled);
+                    
+                    // Fill form fields
+                    Object.keys(platformSettings.config || {}).forEach(key => {
+                        const field = document.getElementById(platform + '-' + key.replace('_', '-'));
+                        if (field) {
+                            field.value = platformSettings.config[key];
+                        }
+                    });
                 }
+            });
+            
+            // Load startup settings
+            if (settings.startup) {
+                Object.keys(settings.startup).forEach(key => {
+                    const field = document.getElementById('startup-' + key.replace('_', '-'));
+                    if (field) {
+                        field.value = settings.startup[key];
+                    }
+                });
             }
-        });
+        }
     } catch (error) {
-        console.error('Error refreshing auth status:', error);
+        console.error('Error loading settings:', error);
     }
-}, 30000); // Refresh every 30 seconds
+}
+
+function updatePlatformStatus(platform, enabled) {
+    const indicator = document.getElementById(platform + '-indicator');
+    const statusText = document.getElementById(platform + '-status-text');
+    
+    if (enabled) {
+        indicator.className = 'w-3 h-3 bg-green-400 rounded-full mr-2';
+        statusText.textContent = 'Configured';
+    } else {
+        indicator.className = 'w-3 h-3 bg-red-400 rounded-full mr-2';
+        statusText.textContent = 'Not configured';
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+    const messageElement = document.getElementById('notification-message');
+    
+    messageElement.textContent = message;
+    
+    // Set color based on type
+    notification.className = notification.className.replace(/bg-\w+-\d+/, '');
+    switch(type) {
+        case 'success':
+            notification.classList.add('bg-green-50', 'border-green-200');
+            messageElement.classList.add('text-green-900');
+            break;
+        case 'error':
+            notification.classList.add('bg-red-50', 'border-red-200');
+            messageElement.classList.add('text-red-900');
+            break;
+        default:
+            notification.classList.add('bg-blue-50', 'border-blue-200');
+            messageElement.classList.add('text-blue-900');
+    }
+    
+    notification.classList.remove('hidden');
+    
+    // Auto hide after 5 seconds
+    setTimeout(hideNotification, 5000);
+}
+
+function hideNotification() {
+    document.getElementById('notification').classList.add('hidden');
+}
 </script>
 {% endblock %} 

@@ -40,17 +40,22 @@ class FounderSocialsAgent:
     Main AI Agent for startup content creation and publishing
     """
     
-    def __init__(self, config_path: str = "config/config.yaml"):
+    def __init__(self, config_path: str = "config/config.yaml", user_email: str = None):
         """Initialize the agent with configuration"""
         self.config = self._load_config(config_path)
+        self.user_email = user_email or "default@user.com"
         self.mcp_manager = MCPManager(self.config.get('mcp', {}))
         
         # Initialize components
         self.content_planner = ContentPlanner(self.config)
         self.content_generator = ContentGenerator(self.config)
         self.content_optimizer = ContentOptimizer(self.config)
-        self.publisher = Publisher(self.config)
+        self.publisher = Publisher(self.config, self.user_email)
         self.analytics = Analytics(self.config)
+        
+    def get_user_publisher(self, user_email: str) -> Publisher:
+        """Get a publisher instance for a specific user"""
+        return Publisher(self.config, user_email)
         
         # State management
         self.content_queue: List[ContentTask] = []
