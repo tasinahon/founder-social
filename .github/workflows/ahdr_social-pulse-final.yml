@@ -58,4 +58,4 @@ jobs:
         with:
           app-name: 'social-pulse-final'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1FF2D7E14D8A4735A16D8BC32563D887 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F23A32AE9FBA499D998C3CBC83CBC6B1 }}
